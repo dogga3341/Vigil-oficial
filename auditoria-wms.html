@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Vigil</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -363,6 +364,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* scan btn no campo EAN */
 .ean-wrap{position:relative;}
 .btn-scan-ean{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:9px;width:36px;height:32px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;}
+/* Quagga video fill */
+#scanViewport video{position:absolute;top:0;left:0;width:100%!important;height:100%!important;object-fit:cover;}
+#scanViewport canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;display:none;}
 </style>
 </head>
 <body>
@@ -660,7 +664,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 <!-- MODAL: SCANNER DE EAN -->
 <div class="scan-overlay" id="scanOverlay">
-  <video id="scanVideo" playsinline autoplay muted></video>
+  <div id="scanViewport" style="width:100%;height:100%;position:relative;background:#000;"></div>
   <div class="scan-topbar">
     <div class="scan-title">🔍 Ler Código de Barras</div>
     <button class="scan-close" onclick="fecharScanner()">✕ Fechar</button>
@@ -1114,108 +1118,93 @@ function bgClose(id){document.getElementById(id).classList.remove('open');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
 function resetApp(){if(!confirm('Voltar ao início?'))return;enderecos=[];filtrados=[];currentIdx=null;lastPdfBlob=null;pdfFileName='';document.getElementById('bottomBar').classList.remove('show');document.getElementById('searchInp').value='';showScreen('sc-upload');}
 
-/* ── SCANNER DE EAN — API NATIVA ── */
-let scanStream=null, scannerAtivo=false, scanAnimFrame=null;
-let cameras=[], cameraIdx=0, barcodeDetector=null;
+/* ── SCANNER DE EAN — QuaggaJS ── */
+let scannerRodando=false, usarFrontal=false, ultimoCode='', ultimoTs=0;
 
 async function abrirScanner(){
-  const overlay=document.getElementById('scanOverlay');
-  overlay.classList.add('open');
-
-  // Verifica suporte
-  const temNativa=('BarcodeDetector' in window);
-  if(!temNativa){
-    showToast('❌ Seu navegador não suporta leitura de câmera. Use o Chrome atualizado.');
-    fecharScanner();return;
-  }
-
+  // Primeiro pede permissão explicitamente
   try{
-    barcodeDetector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']});
+    const teste=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    teste.getTracks().forEach(t=>t.stop());
   }catch(e){
-    showToast('❌ BarcodeDetector indisponível neste dispositivo.');
-    fecharScanner();return;
+    showToast('❌ Permissão de câmera negada. Libere nas configurações do navegador.');
+    return;
   }
-
-  // Lista câmeras
-  try{
-    const devs=await navigator.mediaDevices.enumerateDevices();
-    cameras=devs.filter(d=>d.kind==='videoinput');
-    if(cameras.length===0){showToast('❌ Nenhuma câmera encontrada');fecharScanner();return;}
-    // Prefere traseira
-    const backIdx=cameras.findIndex(c=>/(back|rear|traseira)/i.test(c.label));
-    cameraIdx=backIdx>=0?backIdx:cameras.length-1;
-  }catch(e){cameras=[];cameraIdx=0;}
-
-  iniciarCamera();
+  document.getElementById('scanOverlay').classList.add('open');
+  iniciarQuagga();
 }
 
-async function iniciarCamera(){
-  pararCamera();
-  const video=document.getElementById('scanVideo');
-  const constraints={
-    video:{
-      facingMode:cameras.length>0?undefined:{ideal:'environment'},
-      deviceId:cameras.length>0?{exact:cameras[cameraIdx].deviceId}:undefined,
-      width:{ideal:1280},height:{ideal:720}
-    }
-  };
-  // Fallback simples se não tiver câmeras listadas
-  const finalConstraints=cameras.length>0?constraints:{video:{facingMode:{ideal:'environment'}}};
+function iniciarQuagga(){
+  if(scannerRodando){Quagga.stop();scannerRodando=false;}
 
-  try{
-    scanStream=await navigator.mediaDevices.getUserMedia(finalConstraints);
-    video.srcObject=scanStream;
-    await video.play();
-    scannerAtivo=true;
-    scanLoop(video);
-  }catch(e){
-    showToast('❌ Não foi possível acessar a câmera: '+e.message);
-    fecharScanner();
-  }
-}
+  const facing=usarFrontal?'user':'environment';
 
-function scanLoop(video){
-  if(!scannerAtivo||!barcodeDetector)return;
-  barcodeDetector.detect(video).then(codes=>{
-    if(!scannerAtivo)return;
-    if(codes&&codes.length>0){
-      const code=codes[0].rawValue;
-      if(navigator.vibrate)navigator.vibrate([60,30,60]);
-      const flash=document.getElementById('scanFlash');
-      flash.classList.add('flash');
-      setTimeout(()=>flash.classList.remove('flash'),200);
-      document.getElementById('triEan').value=code;
-      scannerAtivo=false;
-      setTimeout(()=>{
-        fecharScanner();
-        showToast('✅ EAN lido: '+code);
-        document.getElementById('triCodigo').focus();
-      },300);
+  Quagga.init({
+    inputStream:{
+      type:'LiveStream',
+      target:document.getElementById('scanViewport'),
+      constraints:{
+        facingMode:facing,
+        width:{min:640,ideal:1280},
+        height:{min:480,ideal:720},
+      },
+    },
+    locator:{patchSize:'medium',halfSample:true},
+    numOfWorkers:0,
+    decoder:{
+      readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader','code_128_reader','code_39_reader'],
+    },
+    locate:true,
+  },function(err){
+    if(err){
+      showToast('❌ Erro ao iniciar câmera: '+err.message);
+      fecharScanner();
       return;
     }
-    scanAnimFrame=requestAnimationFrame(()=>scanLoop(video));
-  }).catch(()=>{
-    if(scannerAtivo) scanAnimFrame=requestAnimationFrame(()=>scanLoop(video));
+    Quagga.start();
+    scannerRodando=true;
+  });
+
+  Quagga.offDetected(); // remove listeners antigos
+  Quagga.onDetected(function(data){
+    const code=data.codeResult.code;
+    const agora=Date.now();
+    // Debounce: ignora leituras repetidas em menos de 1.5s
+    if(code===ultimoCode&&agora-ultimoTs<1500)return;
+    ultimoCode=code;ultimoTs=agora;
+
+    // Validação básica EAN (só números)
+    if(!/^\d+$/.test(code))return;
+
+    if(navigator.vibrate)navigator.vibrate([80,40,80]);
+    const flash=document.getElementById('scanFlash');
+    flash.classList.add('flash');
+    setTimeout(()=>flash.classList.remove('flash'),200);
+
+    document.getElementById('triEan').value=code;
+
+    setTimeout(()=>{
+      fecharScanner();
+      showToast('✅ EAN lido: '+code);
+      document.getElementById('triCodigo').focus();
+    },350);
   });
 }
 
-async function trocarCamera(){
-  if(cameras.length<=1){showToast('Apenas 1 câmera disponível');return;}
-  cameraIdx=(cameraIdx+1)%cameras.length;
-  iniciarCamera();
-}
-
-function pararCamera(){
-  scannerAtivo=false;
-  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
-  const v=document.getElementById('scanVideo');
-  if(v){v.srcObject=null;}
+function trocarCamera(){
+  usarFrontal=!usarFrontal;
+  if(scannerRodando){Quagga.stop();scannerRodando=false;}
+  iniciarQuagga();
+  showToast(usarFrontal?'📷 Câmera frontal':'📷 Câmera traseira');
 }
 
 function fecharScanner(){
-  pararCamera();
+  if(scannerRodando){
+    try{Quagga.stop();}catch(e){}
+    scannerRodando=false;
+  }
   document.getElementById('scanOverlay').classList.remove('open');
+  document.getElementById('scanViewport').innerHTML='';
 }
 
 renderTriagem();
