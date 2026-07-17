@@ -1693,86 +1693,83 @@ function setPesoUnit(u){
   ['Kg','G'].forEach(x=>{const b=document.getElementById('pu'+x);if(b)b.classList.toggle('active',x.toLowerCase()===u);});
 }
 
-/* ── Parser GS1-128 ──
-   Extrai AIs do código de barras da etiqueta Friboi:
-   (01)GTIN (15)YYMMDD (3102)PESO (37)PECAS etc.         */
+/* ── Parser GS1-128 — versão robusta com regex ── */
 function parseGS1(raw){
-  const result={pesoLiquido:null,pesoBruto:null,validade:null,gtin:null,pecas:null};
-  // Remove parênteses se o scanner retornou no formato legível
-  let s=raw.replace(/\((\d+)\)/g,'$1');
+  const result={pesoLiquido:null,pesoBruto:null,validade:null,gtin:null,pecas:null,raw};
 
-  let i=0;
-  while(i<s.length){
-    const a4=s.slice(i,i+4);
-    const a3=s.slice(i,i+3);
-    const a2=s.slice(i,i+2);
+  // Remove parênteses, espaços, FNC1 e outros caracteres não-numéricos entre AIs
+  const s=raw.replace(/[() \n\r\t]/g,'');
 
-    // AI 310n-316n = Peso em kg (n casas decimais, 6 dígitos)
-    if(/^3[1][0-6]\d$/.test(a4)){
-      const dec=parseInt(a4[2]);
-      const raw6=s.slice(i+4,i+10);
-      if(/^\d{6}$/.test(raw6)){
-        const val=parseInt(raw6)/Math.pow(10,dec);
-        // 310x = líquido, 311x = bruto (aproximação)
-        if(parseInt(a4[2])<=3)result.pesoLiquido=val;
-        else result.pesoBruto=val;
-        i+=10;continue;
-      }
-    }
-    // AI 01 = GTIN (14 dígitos)
-    if(a2==='01'&&/^\d{14}$/.test(s.slice(i+2,i+16))){
-      result.gtin=s.slice(i+2,i+16);i+=16;continue;
-    }
-    // AI 02 = GTIN embalagem
-    if(a2==='02'&&/^\d{14}$/.test(s.slice(i+2,i+16))){
-      i+=16;continue;
-    }
-    // AI 15 = Best Before / AI 17 = Validade (YYMMDD)
-    if((a2==='15'||a2==='17')&&/^\d{6}$/.test(s.slice(i+2,i+8))){
-      const d=s.slice(i+2,i+8);
-      result.validade=`${d.slice(4,6)}/${d.slice(2,4)}/20${d.slice(0,2)}`;
-      i+=8;continue;
-    }
-    // AI 37 = Qtd peças (variável até 8 dígitos)
-    if(a2==='37'){
-      const m=s.slice(i+2).match(/^(\d{1,8})/);
-      if(m){result.pecas=parseInt(m[1]);i+=2+m[1].length;continue;}
-    }
-    // AI 10 = Lote (variável)
-    if(a2==='10'){i+=2;while(i<s.length&&/\d/.test(s[i]))i++;continue;}
-    i++;
+  // PESO LÍQUIDO — AI 310n (n=casas decimais, 6 dígitos)
+  // Ex: 3102002411 → 2411/100 = 24,11 kg
+  const mPL=s.match(/310([0-5])(\d{6})/);
+  if(mPL){
+    result.pesoLiquido=parseInt(mPL[2])/Math.pow(10,parseInt(mPL[1]));
   }
+
+  // PESO BRUTO — AI 320n (6 dígitos)
+  const mPB=s.match(/320([0-5])(\d{6})/);
+  if(mPB){
+    result.pesoBruto=parseInt(mPB[2])/Math.pow(10,parseInt(mPB[1]));
+  }
+
+  // VALIDADE — AI 15 ou 17 (YYMMDD)
+  const mV=s.match(/(?:15|17)(\d{2})(\d{2})(\d{2})/);
+  if(mV){result.validade=`${mV[3]}/${mV[2]}/20${mV[1]}`;}
+
+  // GTIN — AI 01 (14 dígitos)
+  const mG=s.match(/01(\d{14})/);
+  if(mG){result.gtin=mG[1];}
+
+  // PEÇAS — AI 37
+  const mPC=s.match(/37(\d{1,8})/);
+  if(mPC){result.pecas=parseInt(mPC[1]);}
+
   return result;
 }
 
 /* ── Mostrar resultado do GS1 na tela ── */
 function aplicarDadosGS1(dados,rawCode){
+  // Mostra sempre o código bruto lido para debug
+  let debugEl=document.getElementById('pesoDebug');
+  if(!debugEl){
+    debugEl=document.createElement('div');
+    debugEl.id='pesoDebug';
+    debugEl.style.cssText='background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;';
+    document.getElementById('pesoStatus').after(debugEl);
+  }
+  debugEl.innerHTML=`
+    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;margin-bottom:4px;">CÓDIGO LIDO:</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--accent2);word-break:break-all;">${rawCode}</div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:6px;">
+      PL: ${dados.pesoLiquido??'—'} kg &nbsp;|&nbsp; 
+      PB: ${dados.pesoBruto??'—'} kg &nbsp;|&nbsp;
+      Val: ${dados.validade??'—'}
+    </div>`;
+  debugEl.style.display='block';
+
   const pl=dados.pesoLiquido;
   const pb=dados.pesoBruto;
 
   if(!pl&&!pb){
-    // Código não tem peso GS1 — pode ser EAN simples, mostra aviso
     document.getElementById('pesoStatusIcon').textContent='⚠️';
     document.getElementById('pesoStatusVal').textContent='Sem peso';
     document.getElementById('pesoStatusVal').className='peso-status-val';
-    document.getElementById('pesoStatusUnit').textContent='Este código não contém peso. Use o campo manual.';
+    document.getElementById('pesoStatusUnit').textContent='Código sem peso — veja o código lido acima e tente o código de barras LONGO da lateral';
     document.getElementById('pesoScanCard').style.display='none';
-    showToast('⚠️ Código sem peso — use o campo manual');
+    showToast('⚠️ Peso não encontrado neste código');
     return;
   }
 
-  // Preenche campos
   if(pl){document.getElementById('pesoManual').value=pl.toFixed(3);setPesoUnit('kg');}
   if(pb)document.getElementById('pesoBrutoManual').value=pb.toFixed(3);
   if(dados.validade)document.getElementById('pesoValidade').value=dados.validade;
 
-  // Status
   document.getElementById('pesoStatusIcon').textContent='✅';
   document.getElementById('pesoStatusVal').textContent=(pl||pb).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:3});
   document.getElementById('pesoStatusVal').className='peso-status-val found';
-  document.getElementById('pesoStatusUnit').textContent='kg · Peso Líquido — lido do código de barras';
+  document.getElementById('pesoStatusUnit').textContent='kg · Peso Líquido — lido do código GS1-128';
 
-  // Card de dados
   let html='';
   if(pl) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO LÍQUIDO</div><div style="font-family:var(--disp);font-size:24px;font-weight:900;color:var(--green);">${pl.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
   if(pb) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO BRUTO</div><div style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--accent);">${pb.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
