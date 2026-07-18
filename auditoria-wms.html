@@ -491,12 +491,64 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
           <button class="login-eye" id="eyeBtn" onclick="toggleEye()" type="button">👁</button>
         </div>
       </div>
-      <button class="btn-login" onclick="fazerLogin()">Entrar →</button>
+<button class="btn-login" id="btnLogin" onclick="fazerLogin()">Entrar →</button>
       <div class="login-error" id="loginError">Usuário ou senha incorretos</div>
     </div>
     <div class="login-footer">VIGIL v2.0 · Acesso restrito</div>
   </div>
 </div>
+
+<!-- Script de login isolado — roda independente do resto -->
+<script>
+(function(){
+  var USERS_LOGIN={
+    'DerlanG':'47291','MarioD':'83056','MarcosR':'61748',
+    'PedroL':'29403','Emanuel':'75812','ADM01':'33415447'
+  };
+  window.fazerLogin=function(){
+    try{
+      var user=document.getElementById('loginUser').value;
+      var pin=document.getElementById('loginPin').value;
+      var err=document.getElementById('loginError');
+      if(!user){err.textContent='Selecione um usuário';err.style.display='block';return;}
+      if(!pin){err.textContent='Digite sua senha';err.style.display='block';return;}
+      if(USERS_LOGIN[user]!==pin){
+        err.textContent='Senha incorreta. Tente novamente.';
+        err.style.display='block';
+        document.getElementById('loginPin').value='';
+        // Shake animation
+        var card=document.querySelector('.login-card');
+        card.style.animation='shake .4s ease';
+        setTimeout(function(){card.style.animation='';},450);
+        return;
+      }
+      err.style.display='none';
+      window.currentUser=user;
+      var badge=document.getElementById('userBadge');
+      if(badge)badge.textContent=user+' · sair';
+      document.getElementById('loginPin').value='';
+      // Navega para tela principal
+      document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+      document.getElementById('sc-upload').classList.add('active');
+    }catch(e){
+      alert('Erro no login: '+e.message);
+    }
+  };
+  window.toggleEye=function(){
+    var inp=document.getElementById('loginPin');
+    var btn=document.getElementById('eyeBtn');
+    if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+    else{inp.type='password';btn.textContent='👁';}
+  };
+  // Enter no campo de senha
+  document.addEventListener('DOMContentLoaded',function(){
+    var pin=document.getElementById('loginPin');
+    if(pin)pin.addEventListener('keydown',function(e){if(e.key==='Enter')window.fazerLogin();});
+    var btn=document.getElementById('btnLogin');
+    if(btn)btn.addEventListener('click',function(e){e.preventDefault();window.fazerLogin();});
+  });
+})();
+</script>
 
 <div id="sc-upload" class="screen">
   <div class="topbar"><div class="topbar-logo">Vigil</div><span class="topbar-user" id="userBadge" onclick="logout()">— · sair</span></div>
@@ -1000,35 +1052,7 @@ const USERS={
 };
 let currentUser=null;
 
-/* ── LOGIN ── */
-function fazerLogin(){
-  const user=document.getElementById('loginUser').value;
-  const pin=document.getElementById('loginPin').value;
-  const err=document.getElementById('loginError');
-  if(!user){err.textContent='Selecione um usuário';err.classList.add('show');shake();return;}
-  if(!pin){err.textContent='Digite sua senha';err.classList.add('show');shake();return;}
-  if(USERS[user]!==pin){
-    err.textContent='Senha incorreta. Tente novamente.';err.classList.add('show');
-    document.getElementById('loginPin').value='';
-    shake();return;
-  }
-  err.classList.remove('show');
-  currentUser=user;
-  document.getElementById('userBadge').textContent=user+' · sair';
-  document.getElementById('loginPin').value='';
-  showScreen('sc-upload');
-}
-function shake(){
-  const card=document.querySelector('.login-card');
-  card.style.animation='shake .4s ease';
-  setTimeout(()=>card.style.animation='',450);
-}
-function toggleEye(){
-  const inp=document.getElementById('loginPin');
-  const btn=document.getElementById('eyeBtn');
-  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
-  else{inp.type='password';btn.textContent='👁';}
-}
+/* ── LOGIN (funções adicionais) ── */
 function logout(){
   mostrarConfirm('Sair do Vigil?','🔒',()=>{
     currentUser=null;enderecos=[];filtrados=[];triagemItens=[];lastPdfBlob=null;lastTriPdfBlob=null;
@@ -1037,10 +1061,12 @@ function logout(){
     showScreen('sc-login');
   });
 }
-// Enter key on pin
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
-});
+function shake(){
+  const card=document.querySelector('.login-card');
+  if(!card)return;
+  card.style.animation='shake .4s ease';
+  setTimeout(()=>card.style.animation='',450);
+}
 
 /* ── ESTADO GLOBAL ── */
 let enderecos=[], filtrados=[], currentIdx=null, pendingVal='', pdfFileName='', lastPdfBlob=null;
@@ -1469,14 +1495,4 @@ async function gerarPDF(){
     });
     const pages=doc.internal.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,283,205,{align:'right'});}
     lastPdfBlob=doc.output('blob');const a=document.createElement('a');a.href=URL.createObjectURL(lastPdfBlob);
-    a.download='auditoria-wms-'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf';a.click();showToast('✅ PDF gerado!');
-  }catch(e){showToast('❌ Erro: '+e.message);console.error(e);}
-}
-
-/* ── WHATSAPP ── */
-function abrirWA(){if(!lastPdfBlob){gerarPDF().then(()=>setTimeout(()=>document.getElementById('modalWA').classList.add('open'),1000));return;}document.getElementById('waTxt').value='';document.getElementById('modalWA').classList.add('open');}
-async function enviarWA(){
-  const msg=document.getElementById('waTxt').value.trim()||'Auditoria WMS concluída. Segue relatório 📦';bgClose('modalWA');
-  if(lastPdfBlob&&navigator.canShare){const file=new File([lastPdfBlob],'auditoria-wms.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
-  const conf=enderecos.filter(e=>e.confirmado).length;
-  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n📊 Auditoria WMS\n✅ Conferidos: '+conf+'\n📦 Total: '+enderecos.l
+    a.download='au
