@@ -547,6 +547,58 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     var btn=document.getElementById('btnLogin');
     if(btn)btn.addEventListener('click',function(e){e.preventDefault();window.fazerLogin();});
   });
+
+  /* ── NAVEGAÇÃO GLOBAL — definida aqui para funcionar mesmo com erros no script principal ── */
+  window.showScreen=function(id){
+    try{
+      document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+      var el=document.getElementById(id);
+      if(el)el.classList.add('active');
+    }catch(e){}
+  };
+  window.voltarHome=function(){
+    try{
+      var itens=window.triagemItens||[];
+      if(itens.length>0){
+        if(window.mostrarConfirm){
+          window.mostrarConfirm('Voltar? Os itens serão perdidos.','⚠️',function(){
+            window.triagemItens=[];window.showScreen('sc-upload');
+          });
+        }else{
+          if(confirm('Voltar? Os itens serão perdidos.')){window.triagemItens=[];window.showScreen('sc-upload');}
+        }
+        return;
+      }
+      window.showScreen('sc-upload');
+    }catch(e){window.showScreen('sc-upload');}
+  };
+  window.voltarHomePeso=function(){
+    try{
+      var pesos=window.pesosRegistrados||[];
+      if(pesos.length>0){
+        if(window.mostrarConfirm){
+          window.mostrarConfirm('Voltar? Os pesos serão perdidos.','⚠️',function(){
+            window.pesosRegistrados=[];
+            if(window.fecharScannerPeso)window.fecharScannerPeso();
+            window.showScreen('sc-upload');
+          });
+        }else{
+          if(confirm('Voltar? Os pesos serão perdidos.')){window.pesosRegistrados=[];window.showScreen('sc-upload');}
+        }
+        return;
+      }
+      if(window.fecharScannerPeso)window.fecharScannerPeso();
+      window.showScreen('sc-upload');
+    }catch(e){window.showScreen('sc-upload');}
+  };
+  window.voltarLista=function(){
+    try{
+      if(window.atualizarProgresso)window.atualizarProgresso();
+      if(window.filtrar)window.filtrar();
+      if(window.checkAllDone)window.checkAllDone();
+      window.showScreen('sc-enderecos');
+    }catch(e){window.showScreen('sc-enderecos');}
+  };
 })();
 </script>
 
@@ -1039,7 +1091,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div class="toast" id="toast"></div>
 
 <script>
+try{
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}catch(e){console.warn('pdfjs:',e);}
 
 /* ── USUÁRIOS ── */
 const USERS={
@@ -1082,7 +1136,6 @@ function voltarHome(){
   }
   showScreen('sc-upload');
 }
-
 /* ── QUANTIDADE ── */
 function setQtyMode(mode){
   triagemQtyMode=mode;
@@ -1479,20 +1532,6 @@ async function gerarPDF(){
   showToast('⏳ Gerando PDF...');
   try{
     const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const now=new Date();
-    const ds=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    doc.setFillColor(77,158,255);doc.rect(0,0,297,22,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
-    doc.text('VIGIL · AUDITORIA WMS · RELATÓRIO DE VALIDADES',14,10);doc.setFontSize(7);doc.setFont(undefined,'normal');
-    doc.text('Arquivo: '+pdfFileName+'  |  Operador: '+(currentUser||'—'),14,16);doc.text('Gerado: '+ds,200,16);
-    const conf=enderecos.filter(e=>e.confirmado).length;
-    doc.setFillColor(245,248,255);doc.rect(0,22,297,9,'F');doc.setTextColor(30,58,138);doc.setFontSize(7);doc.setFont(undefined,'bold');
-    doc.text(`Total: ${enderecos.length}   Conferidos: ${conf}   Pendentes: ${enderecos.length-conf}`,14,28);
-    doc.autoTable({
-      startY:33,head:[['Endereço','Código','Descrição','Norma','Validade','Embalagem','Unidade','Dt.Entrada','Status']],
-      body:enderecos.map(en=>{const st=en.confirmado?{label:'✓ Conferido'}:getStatus(en.validade);return[en.endereco,en.codigo,en.descricao,en.norma||'—',en.validade||'—',en.embalagem||'—',en.unidade||'—',en.dtaEntr||'—',st.label];}),
-      headStyles:{fillColor:[77,158,255],textColor:255,fontStyle:'bold',fontSize:6},bodyStyles:{fontSize:6},alternateRowStyles:{fillColor:[248,250,252]},
-      columnStyles:{0:{cellWidth:28},1:{cellWidth:18},2:{cellWidth:70},3:{cellWidth:14,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:16,halign:'center'},6:{cellWidth:16,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:26,halign:'center'}},
-      margin:{left:14,right:14},theme:'grid'
-    });
-    const pages=doc.internal.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,283,205,{align:'right'});}
-    lastPdfBlob=doc.output('blob');const a=document.createElement('a');a.href=URL.createObjectURL(lastPdfBlob);
-    a.download='au
+    
+
+  
