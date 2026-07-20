@@ -1012,11 +1012,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div class="toast" id="toast"></div>
 
 <script>
-try{
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}catch(e){console.warn('pdfjs:',e);}
-
-try{
+try{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}catch(e){}
 
 /* ── USUÁRIOS ── */
 const USERS={
@@ -1479,4 +1475,561 @@ async function gerarPDF(){
 function abrirWA(){if(!lastPdfBlob){gerarPDF().then(()=>setTimeout(()=>document.getElementById('modalWA').classList.add('open'),1000));return;}document.getElementById('waTxt').value='';document.getElementById('modalWA').classList.add('open');}
 async function enviarWA(){
   const msg=document.getElementById('waTxt').value.trim()||'Auditoria WMS concluída. Segue relatório 📦';bgClose('modalWA');
-  if(last
+  if(lastPdfBlob&&navigator.canShare){const file=new File([lastPdfBlob],'auditoria-wms.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
+  const conf=enderecos.filter(e=>e.confirmado).length;
+  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n📊 Auditoria WMS\n✅ Conferidos: '+conf+'\n📦 Total: '+enderecos.length+'\n\n_PDF salvo — anexe pelo clipe 📎_');
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+function abrirWATriagem(){if(triagemItens.length===0){showToast('❌ Nenhum item registrado');return;}document.getElementById('waTxtTri').value='';document.getElementById('modalWATri').classList.add('open');}
+async function enviarWATriagem(){
+  const msg=document.getElementById('waTxtTri').value.trim()||'Triagem de produtos realizada. Segue relatório 📦';bgClose('modalWATri');
+  if(!lastTriPdfBlob)await gerarPDFTriagem();
+  if(lastTriPdfBlob&&navigator.canShare){const file=new File([lastTriPdfBlob],'triagem.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
+  const ava=triagemItens.filter(i=>i.avariado).length;
+  const linhas=triagemItens.slice(0,15).map((it,i)=>`${i+1}. ${it.descricao||'EAN:'+it.ean}${it.codigo?' ['+it.codigo+']':''} — ${getQtyText(it)}${it.validade?' Venc:'+it.validade:''}${it.avariado?' ⚠️AVARIADO'+(it.avaQtd?' ('+it.avaQtd+it.avaUnit+')':''):''}`).join('\n');
+  const extra=triagemItens.length>15?`\n...e mais ${triagemItens.length-15} itens`:'';
+  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n🔍 TRIAGEM DE PRODUTOS\n📦 Total: '+triagemItens.length+'\n✅ Conformes: '+(triagemItens.length-ava)+'\n⚠️ Avariados: '+ava+'\n\n'+linhas+extra+'\n\n_PDF salvo — anexe pelo clipe 📎_');
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+
+/* ── UTILS ── */
+function maskDate(v){let n=v.replace(/\D/g,'');if(n.length>=3)n=n.slice(0,2)+'/'+n.slice(2);if(n.length>=6)n=n.slice(0,5)+'/'+n.slice(5,9);return n;}
+function isValidDate(s){const p=s.split('/');if(p.length!==3||p[2].length!==4)return false;const d=new Date(+p[2],+p[1]-1,+p[0]);return!isNaN(d)&&d.getDate()===+p[0];}
+function bgClose(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
+
+/* ── MODAL CONFIRM CUSTOMIZADO (substitui confirm() nativo) ── */
+let _confirmCb=null;
+function mostrarConfirm(msg,icone,cb){
+  _confirmCb=cb;
+  document.getElementById('apkConfMsg').textContent=msg;
+  document.getElementById('apkConfIcon').textContent=icone||'❓';
+  document.getElementById('modalApkConf').classList.add('open');
+}
+function apkConfSim(){bgClose('modalApkConf');if(_confirmCb)_confirmCb();}
+function apkConfNao(){bgClose('modalApkConf');_confirmCb=null;}
+
+function resetApp(){
+  mostrarConfirm('Voltar ao início?','🏠',()=>{
+    enderecos=[];filtrados=[];currentIdx=null;lastPdfBlob=null;pdfFileName='';
+    document.getElementById('bottomBar').classList.remove('show');
+    document.getElementById('searchInp').value='';
+    showScreen('sc-upload');
+  });
+}
+
+/* ── SCANNER DE EAN — BarcodeDetector nativo + fallback foto ── */
+let scanStream=null, scannerAtivo=false, scanAnimFrame=null, usarFrontal=false;
+
+async function abrirScanner(){
+  document.getElementById('scanOverlay').classList.add('open');
+  document.getElementById('scanHint').textContent='Iniciando câmera...';
+
+  // Tenta abrir câmera
+  try{
+    const constraints={video:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}};
+    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
+    const video=document.getElementById('scanVideo');
+    video.srcObject=scanStream;
+    await video.play();
+  }catch(e){
+    fecharScanner();
+    showToast('❌ Câmera bloqueada — use o botão 📷 Foto');
+    usarFallbackCamera();
+    return;
+  }
+
+  // Tenta BarcodeDetector nativo (mais confiável no APK)
+  if('BarcodeDetector' in window){
+    document.getElementById('scanHint').textContent='Aponte para o código de barras';
+    iniciarBarcodeDetector();
+    return;
+  }
+
+  // Fallback: QuaggaJS no video element
+  document.getElementById('scanHint').textContent='Aponte para o código (QuaggaJS)';
+  iniciarQuagga();
+}
+
+/* ── BarcodeDetector nativo (Chrome/APK) ── */
+function iniciarBarcodeDetector(){
+  const video=document.getElementById('scanVideo');
+  const detector=new BarcodeDetector({
+    formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']
+  });
+  scannerAtivo=true;
+
+  async function loop(){
+    if(!scannerAtivo)return;
+    try{
+      if(video.readyState>=2){
+        const codes=await detector.detect(video);
+        if(codes&&codes.length>0){
+          const code=codes[0].rawValue;
+          if(/\d/.test(code)){
+            scannerAtivo=false;
+            if(navigator.vibrate)navigator.vibrate([80,40,80]);
+            const flash=document.getElementById('scanFlash');
+            flash.classList.add('flash');
+            setTimeout(()=>flash.classList.remove('flash'),200);
+            document.getElementById('triEan').value=code;
+            setTimeout(()=>{
+              fecharScanner();
+              showToast('✅ EAN: '+code);
+              document.getElementById('triCodigo').focus();
+            },300);
+            return;
+          }
+        }
+      }
+    }catch(e){}
+    scanAnimFrame=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ── QuaggaJS fallback (navegador sem BarcodeDetector) ── */
+function iniciarQuagga(){
+  if(typeof Quagga==='undefined'){usarFallbackCamera();return;}
+  const vp=document.getElementById('scanViewport');
+  vp.style.display='block';
+  Quagga.init({
+    inputStream:{type:'LiveStream',target:vp,
+      constraints:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}},
+    locator:{patchSize:'medium',halfSample:true},
+    numOfWorkers:0,
+    decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+    locate:true,
+  },err=>{
+    if(err){showToast('❌ Quagga: '+err.message);fecharScanner();return;}
+    Quagga.start();
+    scannerAtivo=true;
+  });
+  Quagga.offDetected();
+  Quagga.onDetected(data=>{
+    const code=data.codeResult.code;
+    if(!/^\d+$/.test(code))return;
+    if(navigator.vibrate)navigator.vibrate([80,40,80]);
+    const flash=document.getElementById('scanFlash');
+    flash.classList.add('flash');
+    setTimeout(()=>flash.classList.remove('flash'),200);
+    document.getElementById('triEan').value=code;
+    setTimeout(()=>{fecharScanner();showToast('✅ EAN: '+code);document.getElementById('triCodigo').focus();},350);
+  });
+}
+
+/* ── Fallback: tira foto e lê o código ── */
+function usarFallbackCamera(){
+  fecharScanner();
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.setAttribute('capture','environment');
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=async()=>{
+    const file=inp.files[0];
+    document.body.removeChild(inp);
+    if(!file){showToast('❌ Nenhuma foto');return;}
+    showToast('🔍 Lendo código...');
+
+    // Tenta BarcodeDetector na imagem
+    if('BarcodeDetector' in window){
+      try{
+        const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39']});
+        const img=await createImageBitmap(file);
+        const codes=await bd.detect(img);
+        if(codes.length>0){
+          const code=codes[0].rawValue;
+          document.getElementById('triEan').value=code;
+          showToast('✅ EAN: '+code);
+          if(navigator.vibrate)navigator.vibrate([80,40,80]);
+          document.getElementById('triCodigo').focus();
+          return;
+        }
+        showToast('❌ Código não encontrado. Tente mais perto.');return;
+      }catch(e){}
+    }
+
+    // Tenta Quagga decodeSingle
+    if(typeof Quagga!=='undefined'){
+      const url=URL.createObjectURL(file);
+      Quagga.decodeSingle({
+        decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+        locate:true,src:url
+      },result=>{
+        URL.revokeObjectURL(url);
+        if(result&&result.codeResult){
+          document.getElementById('triEan').value=result.codeResult.code;
+          showToast('✅ EAN: '+result.codeResult.code);
+          document.getElementById('triCodigo').focus();
+        }else{
+          showToast('❌ Não leu. Tente digitar o código.');
+        }
+      });
+    }else{
+      showToast('❌ Leitor indisponível. Digite o código manualmente.');
+    }
+  };
+  inp.click();
+}
+
+function trocarCamera(){
+  usarFrontal=!usarFrontal;
+  fecharScanner();
+  setTimeout(abrirScanner,300);
+  showToast(usarFrontal?'📷 Câmera frontal':'📷 Câmera traseira');
+}
+
+function fecharScanner(){
+  scannerAtivo=false;
+  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  const video=document.getElementById('scanVideo');
+  if(video){video.srcObject=null;}
+  if(typeof Quagga!=='undefined'){try{Quagga.stop();}catch(e){}}
+  const vp=document.getElementById('scanViewport');
+  if(vp){vp.innerHTML='';vp.style.display='none';}
+  document.getElementById('scanOverlay').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════
+   TELA: PESO DE CAIXAS — GS1-128
+   ══════════════════════════════════════════ */
+let pesosRegistrados=[], pesoUnit='kg', pesoCamStream=null, pesoCamAtivo=false,
+    pesoCamFrame=null, pesoCamFrontal=false, lastPesoPdfBlob=null;
+
+function voltarHomePeso(){
+  if(pesosRegistrados.length>0){
+    mostrarConfirm('Voltar? Os pesos serão perdidos.','⚠️',()=>{
+      pesosRegistrados=[];fecharScannerPeso();showScreen('sc-upload');
+    });return;
+  }
+  fecharScannerPeso();showScreen('sc-upload');
+}
+function setPesoUnit(u){
+  pesoUnit=u;
+  ['Kg','G'].forEach(x=>{const b=document.getElementById('pu'+x);if(b)b.classList.toggle('active',x.toLowerCase()===u);});
+}
+
+/* ── Parser GS1-128 — versão robusta com regex ── */
+function parseGS1(raw){
+  const result={pesoLiquido:null,pesoBruto:null,validade:null,gtin:null,pecas:null,raw};
+
+  // Remove parênteses, espaços, FNC1 e outros caracteres não-numéricos entre AIs
+  const s=raw.replace(/[() \n\r\t]/g,'');
+
+  // PESO LÍQUIDO — AI 310n (n=casas decimais, 6 dígitos)
+  // Ex: 3102002411 → 2411/100 = 24,11 kg
+  const mPL=s.match(/310([0-5])(\d{6})/);
+  if(mPL){
+    result.pesoLiquido=parseInt(mPL[2])/Math.pow(10,parseInt(mPL[1]));
+  }
+
+  // PESO BRUTO — AI 320n (6 dígitos)
+  const mPB=s.match(/320([0-5])(\d{6})/);
+  if(mPB){
+    result.pesoBruto=parseInt(mPB[2])/Math.pow(10,parseInt(mPB[1]));
+  }
+
+  // VALIDADE — AI 15 ou 17 (YYMMDD)
+  const mV=s.match(/(?:15|17)(\d{2})(\d{2})(\d{2})/);
+  if(mV){result.validade=`${mV[3]}/${mV[2]}/20${mV[1]}`;}
+
+  // GTIN — AI 01 (14 dígitos)
+  const mG=s.match(/01(\d{14})/);
+  if(mG){result.gtin=mG[1];}
+
+  // PEÇAS — AI 37
+  const mPC=s.match(/37(\d{1,8})/);
+  if(mPC){result.pecas=parseInt(mPC[1]);}
+
+  return result;
+}
+
+/* ── Mostrar resultado do GS1 na tela ── */
+function aplicarDadosGS1(dados,rawCode){
+  // Mostra sempre o código bruto lido para debug
+  let debugEl=document.getElementById('pesoDebug');
+  if(!debugEl){
+    debugEl=document.createElement('div');
+    debugEl.id='pesoDebug';
+    debugEl.style.cssText='background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;';
+    document.getElementById('pesoStatus').after(debugEl);
+  }
+  debugEl.innerHTML=`
+    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;margin-bottom:4px;">CÓDIGO LIDO:</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--accent2);word-break:break-all;">${rawCode}</div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:6px;">
+      PL: ${dados.pesoLiquido??'—'} kg &nbsp;|&nbsp; 
+      PB: ${dados.pesoBruto??'—'} kg &nbsp;|&nbsp;
+      Val: ${dados.validade??'—'}
+    </div>`;
+  debugEl.style.display='block';
+
+  const pl=dados.pesoLiquido;
+  const pb=dados.pesoBruto;
+
+  if(!pl&&!pb){
+    document.getElementById('pesoStatusIcon').textContent='⚠️';
+    document.getElementById('pesoStatusVal').textContent='Sem peso';
+    document.getElementById('pesoStatusVal').className='peso-status-val';
+    document.getElementById('pesoStatusUnit').textContent='Código sem peso — veja o código lido acima e tente o código de barras LONGO da lateral';
+    document.getElementById('pesoScanCard').style.display='none';
+    showToast('⚠️ Peso não encontrado neste código');
+    return;
+  }
+
+  if(pl){document.getElementById('pesoManual').value=pl.toFixed(3);setPesoUnit('kg');}
+  if(pb)document.getElementById('pesoBrutoManual').value=pb.toFixed(3);
+  if(dados.validade)document.getElementById('pesoValidade').value=dados.validade;
+
+  document.getElementById('pesoStatusIcon').textContent='✅';
+  document.getElementById('pesoStatusVal').textContent=(pl||pb).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:3});
+  document.getElementById('pesoStatusVal').className='peso-status-val found';
+  document.getElementById('pesoStatusUnit').textContent='kg · Peso Líquido — lido do código GS1-128';
+
+  let html='';
+  if(pl) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO LÍQUIDO</div><div style="font-family:var(--disp);font-size:24px;font-weight:900;color:var(--green);">${pl.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
+  if(pb) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO BRUTO</div><div style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--accent);">${pb.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
+  if(dados.validade) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">VALIDADE</div><div style="font-size:14px;font-weight:700;color:var(--amber);">${dados.validade}</div></div>`;
+  if(dados.pecas) html+=`<div><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PEÇAS</div><div style="font-size:14px;font-weight:700;color:var(--text);">${dados.pecas}</div></div>`;
+  document.getElementById('pesoScanDados').innerHTML=html;
+  document.getElementById('pesoScanCard').style.display='block';
+
+  if(navigator.vibrate)navigator.vibrate([80,40,80]);
+  showToast('✅ Peso lido: '+(pl||pb).toFixed(3)+' kg');
+}
+
+/* ── Scanner de código de barras para peso ── */
+async function abrirScannerPeso(){
+  try{
+    pesoCamStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment',width:{ideal:3840,min:1280},height:{ideal:2160,min:720}}
+    });
+    const video=document.getElementById('pesoVideo');
+    video.srcObject=pesoCamStream;await video.play();
+    document.getElementById('pesoScanOverlay').classList.add('open');
+    pesoCamAtivo=true;
+    iniciarScannerPeso(video);
+  }catch(e){
+    try{
+      pesoCamStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const video=document.getElementById('pesoVideo');
+      video.srcObject=pesoCamStream;await video.play();
+      document.getElementById('pesoScanOverlay').classList.add('open');
+      pesoCamAtivo=true;
+      iniciarScannerPeso(video);
+    }catch(e2){showToast('❌ Câmera bloqueada. Use 📸 Tirar Foto.');}
+  }
+}
+
+/* ── Foto para leitura de código ── */
+function capturarFotoCodigoBarras(){
+  fecharScannerPeso();
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.setAttribute('capture','environment');
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=async()=>{
+    const file=inp.files[0];
+    document.body.removeChild(inp);
+    if(!file)return;
+    showToast('🔍 Lendo código...');
+    if('BarcodeDetector' in window){
+      try{
+        const bd=new BarcodeDetector({formats:['code_128','gs1_128','code_39','data_matrix','qr_code','ean_13','ean_8','upc_a']});
+        const img=await createImageBitmap(file);
+        const codes=await bd.detect(img);
+        if(codes&&codes.length>0){
+          // Testa todos os códigos encontrados, pega o que tem peso
+          let melhor=null;
+          for(const c of codes){
+            const d=parseGS1(c.rawValue);
+            if(d.pesoLiquido||d.pesoBruto){melhor={dados:d,raw:c.rawValue};break;}
+          }
+          if(!melhor)melhor={dados:parseGS1(codes[0].rawValue),raw:codes[0].rawValue};
+          aplicarDadosGS1(melhor.dados,melhor.raw);
+        }else{showToast('❌ Nenhum código encontrado. Tente mais perto e com boa luz.');}
+      }catch(e){showToast('❌ Erro: '+e.message);}
+    }else{showToast('❌ Leitor não suportado. Digite o peso manualmente.');}
+  };
+  inp.click();
+}
+
+function iniciarScannerPeso(video){
+  if('BarcodeDetector' in window){
+    const bd=new BarcodeDetector({formats:['code_128','gs1_128','code_39','data_matrix','qr_code','ean_13','ean_8','upc_a']});
+    let ultimo='',ultimoTs=0;
+    function loop(){
+      if(!pesoCamAtivo)return;
+      if(video.readyState>=2){
+        bd.detect(video).then(codes=>{
+          if(!pesoCamAtivo)return;
+          if(codes&&codes.length>0){
+            // Prioriza código com peso
+            let melhor=null;
+            for(const c of codes){
+              const d=parseGS1(c.rawValue);
+              if(d.pesoLiquido||d.pesoBruto){melhor={dados:d,raw:c.rawValue};break;}
+            }
+            if(!melhor)melhor={dados:parseGS1(codes[0].rawValue),raw:codes[0].rawValue};
+            const agora=Date.now();
+            if(melhor.raw===ultimo&&agora-ultimoTs<2000){pesoCamFrame=requestAnimationFrame(loop);return;}
+            ultimo=melhor.raw;ultimoTs=agora;
+            const flash=document.getElementById('pesoScanFlash');
+            flash.classList.add('flash');setTimeout(()=>flash.classList.remove('flash'),200);
+            pesoCamAtivo=false;
+            setTimeout(()=>{fecharScannerPeso();aplicarDadosGS1(melhor.dados,melhor.raw);},300);
+            return;
+          }
+          pesoCamFrame=requestAnimationFrame(loop);
+        }).catch(()=>{pesoCamFrame=requestAnimationFrame(loop);});
+      }else{pesoCamFrame=requestAnimationFrame(loop);}
+    }
+    loop();return;
+  }
+  // Fallback Quagga
+  if(typeof Quagga!=='undefined'){
+    const vp=document.getElementById('pesoScanViewport');vp.style.display='block';
+    Quagga.init({
+      inputStream:{type:'LiveStream',target:vp,constraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}},
+      decoder:{readers:['code_128_reader','ean_reader','ean_8_reader','code_39_reader','i2of5_reader']},
+      locate:true,numOfWorkers:0,
+    },err=>{if(err){showToast('❌ '+err.message);fecharScannerPeso();return;}Quagga.start();pesoCamAtivo=true;});
+    let ultimo='',ultimoTs=0;
+    Quagga.offDetected();
+    Quagga.onDetected(d=>{
+      const code=d.codeResult.code,agora=Date.now();
+      if(code===ultimo&&agora-ultimoTs<2000)return;
+      ultimo=code;ultimoTs=agora;
+      setTimeout(()=>{fecharScannerPeso();aplicarDadosGS1(parseGS1(code),code);},300);
+    });
+    return;
+  }
+  showToast('⚠️ Scanner não disponível. Use 📸 Tirar Foto.');
+}
+
+function trocarCameraPeso(){
+  pesoCamFrontal=!pesoCamFrontal;
+  fecharScannerPeso();
+  setTimeout(abrirScannerPeso,300);
+}
+function fecharScannerPeso(){
+  pesoCamAtivo=false;
+  if(pesoCamFrame){cancelAnimationFrame(pesoCamFrame);pesoCamFrame=null;}
+  if(pesoCamStream){pesoCamStream.getTracks().forEach(t=>t.stop());pesoCamStream=null;}
+  const v=document.getElementById('pesoVideo');if(v)v.srcObject=null;
+  if(typeof Quagga!=='undefined'){try{Quagga.stop();}catch(e){}}
+  const vp=document.getElementById('pesoScanViewport');if(vp){vp.innerHTML='';vp.style.display='none';}
+  document.getElementById('pesoScanOverlay').classList.remove('open');
+}
+
+/* ── Registrar peso ── */
+function registrarPeso(){
+  const raw=document.getElementById('pesoManual').value.trim();
+  if(!raw||isNaN(parseFloat(raw.replace(',','.')))){showToast('❌ Informe o peso líquido');document.getElementById('pesoManual').focus();return;}
+  const valor=parseFloat(raw.replace(',','.'));
+  const brutoRaw=document.getElementById('pesoBrutoManual').value.trim();
+  const bruto=brutoRaw?parseFloat(brutoRaw.replace(',','.')):null;
+  const obs=document.getElementById('pesoObs').value.trim();
+  const validade=document.getElementById('pesoValidade').value.trim();
+  pesosRegistrados.unshift({id:Date.now(),valor,unit:pesoUnit,bruto,obs,validade,hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
+  // Limpa form
+  ['pesoManual','pesoBrutoManual','pesoObs','pesoValidade'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('pesoScanCard').style.display='none';
+  document.getElementById('pesoStatusVal').textContent='—';
+  document.getElementById('pesoStatusVal').className='peso-status-val';
+  document.getElementById('pesoStatusIcon').textContent='⚖️';
+  document.getElementById('pesoStatusUnit').textContent='Escaneie o código de barras da etiqueta';
+  renderPesos();showToast('✅ Peso registrado!');
+}
+function removerPeso(id){pesosRegistrados=pesosRegistrados.filter(p=>p.id!==id);renderPesos();}
+function limparPesos(){
+  if(pesosRegistrados.length===0)return;
+  mostrarConfirm('Limpar todos os '+pesosRegistrados.length+' pesos?','🗑️',()=>{pesosRegistrados=[];renderPesos();showToast('🗑 Lista limpa');});
+}
+function renderPesos(){
+  const total=pesosRegistrados.length;
+  document.getElementById('pesoCount').textContent=total+' reg.';
+  const lista=document.getElementById('pesoLista');lista.innerHTML='';
+  if(total===0){lista.innerHTML=`<div class="peso-empty"><div style="font-size:40px;opacity:.5">⚖️</div><div style="font-size:13px;margin-top:10px;font-weight:500;">Nenhum peso registrado ainda.</div></div>`;return;}
+  const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
+  const resumo=document.createElement('div');
+  resumo.style.cssText='background:var(--green-bg);border:1px solid var(--green-bd);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;';
+  resumo.innerHTML=`<span style="font-size:20px">⚖️</span><div><div style="font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">TOTAL ACUMULADO</div><div style="font-family:var(--disp);font-size:22px;font-weight:900;color:var(--green);">${totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
+  lista.appendChild(resumo);
+  pesosRegistrados.forEach(p=>{
+    const el=document.createElement('div');el.className='peso-item';
+    el.innerHTML=`
+      <div class="peso-item-icon">📦</div>
+      <div class="peso-item-info">
+        <div class="peso-item-val">${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:3})} ${p.unit}</div>
+        <div class="peso-item-meta">${p.hora}${p.obs?' · '+p.obs:''}${p.validade?' · Val: '+p.validade:''}${p.bruto?' · Bruto: '+p.bruto.toLocaleString('pt-BR',{minimumFractionDigits:3})+'kg':''}</div>
+      </div>
+      <button class="btn-del-peso" onclick="removerPeso(${p.id})">✕</button>`;
+    lista.appendChild(el);
+  });
+}
+
+/* ── PDF Pesos ── */
+async function gerarPDFPeso(){
+  if(pesosRegistrados.length===0){showToast('❌ Nenhum peso registrado');return;}
+  showToast('⏳ Gerando PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const now=new Date();const ds=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    doc.setFillColor(34,197,94);doc.rect(0,0,210,22,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
+    doc.text('VIGIL · PESAGEM DE CAIXAS',14,10);
+    doc.setFontSize(7);doc.setFont(undefined,'normal');
+    doc.text('Gerado: '+ds+'  |  Operador: '+(currentUser||'—'),14,16);
+    const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
+    doc.setFillColor(240,255,245);doc.rect(0,22,210,9,'F');
+    doc.setTextColor(22,101,52);doc.setFontSize(7);doc.setFont(undefined,'bold');
+    doc.text(`Total registros: ${pesosRegistrados.length}   Total líquido: ${totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg`,14,28);
+    doc.autoTable({
+      startY:33,
+      head:[['#','Hora','Produto','Peso Líq.','Peso Bruto','Validade']],
+      body:pesosRegistrados.map((p,i)=>[i+1,p.hora,p.obs||'—',p.valor.toLocaleString('pt-BR',{minimumFractionDigits:3})+' '+p.unit,p.bruto?p.bruto.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg':'—',p.validade||'—']),
+      foot:[['','','Total:',totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg','','']],
+      headStyles:{fillColor:[34,197,94],textColor:255,fontStyle:'bold',fontSize:8},
+      bodyStyles:{fontSize:8},alternateRowStyles:{fillColor:[240,255,245]},
+      footStyles:{fillColor:[22,101,52],textColor:255,fontStyle:'bold',fontSize:8},
+      columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:20,halign:'center'},2:{cellWidth:70},3:{cellWidth:28,halign:'right'},4:{cellWidth:28,halign:'right'},5:{cellWidth:24,halign:'center'}},
+      margin:{left:14,right:14},theme:'grid'
+    });
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,196,290,{align:'right'});}
+    lastPesoPdfBlob=doc.output('blob');
+    const a=document.createElement('a');a.href=URL.createObjectURL(lastPesoPdfBlob);
+    a.download='pesagem-'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf';a.click();
+    showToast('✅ PDF gerado!');
+  }catch(e){showToast('❌ Erro: '+e.message);}
+}
+function abrirWAPeso(){if(pesosRegistrados.length===0){showToast('❌ Nenhum peso registrado');return;}document.getElementById('waTxtPeso').value='';document.getElementById('modalWAPeso').classList.add('open');}
+async function enviarWAPeso(){
+  const msg=document.getElementById('waTxtPeso').value.trim()||'Pesagem de caixas realizada. Segue relatório ⚖️';
+  bgClose('modalWAPeso');
+  if(!lastPesoPdfBlob)await gerarPDFPeso();
+  if(lastPesoPdfBlob&&navigator.canShare){const file=new File([lastPesoPdfBlob],'pesagem.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
+  const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
+  const linhas=pesosRegistrados.slice(0,15).map((p,i)=>`${i+1}. ${p.obs||'Caixa '+(i+1)} — ${p.valor}${p.unit}${p.validade?' Val:'+p.validade:''} (${p.hora})`).join('\n');
+  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n⚖️ PESAGEM DE CAIXAS\n📦 Registros: '+pesosRegistrados.length+'\n📊 Total: '+totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg\n\n'+linhas+'\n\n_PDF salvo — anexe pelo clipe 📎_');
+  window.location.href=url;showToast('💬 Abrindo WhatsApp...');
+}
+renderPesos();
+
+/* ── SERVICE WORKER ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));
+  });
+}
+
+renderTriagem();
+</script>
+</body>
+</html>
