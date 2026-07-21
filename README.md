@@ -2033,3 +2033,4 @@ renderTriagem();
 </script>
 </body>
 </html>
+ 
