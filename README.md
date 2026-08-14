@@ -375,44 +375,49 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 @keyframes pulse-blue{0%,100%{box-shadow:0 0 0 0 rgba(77,158,255,.3)}50%{box-shadow:0 0 0 6px rgba(77,158,255,0)}}
 
-/* ══ TELA PESO DE CAIXAS ══ */
-#sc-peso{background:var(--bg);}
-#sc-peso .scroll-body{padding:12px 14px 120px;}
-.peso-cam-area{position:relative;width:100%;border-radius:18px;overflow:hidden;background:#000;margin-bottom:14px;border:2px solid var(--green-bd);}
-.peso-cam-area video{width:100%;display:block;max-height:300px;object-fit:cover;}
-.peso-cam-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
-.peso-cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-.peso-cam-box{border:2px solid var(--green);border-radius:8px;width:80%;height:60%;position:relative;box-shadow:0 0 0 2000px rgba(0,0,0,.45);}
-.peso-cam-box::before{content:'FOQUE NO PESO';position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-size:11px;font-family:var(--mono);color:var(--green);letter-spacing:1px;white-space:nowrap;}
-.peso-cam-laser{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:laser 2s ease-in-out infinite;}
-.peso-status{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
-.peso-status-icon{font-size:28px;flex-shrink:0;}
-.peso-status-info{flex:1;}
-.peso-status-label{font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.7px;text-transform:uppercase;margin-bottom:4px;}
-.peso-status-val{font-family:var(--disp);font-size:32px;font-weight:900;color:var(--text);letter-spacing:-1px;line-height:1;}
-.peso-status-val.found{color:var(--green);}
-.peso-status-unit{font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;}
-.peso-ocr-raw{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;min-height:32px;word-break:break-all;}
-.btn-peso-scan{width:100%;background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:14px;border:none;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(34,197,94,.25);margin-bottom:10px;}
-.btn-peso-foto{width:100%;background:var(--surf2);border:1.5px solid var(--green-bd);color:var(--green);font-size:15px;font-weight:700;padding:14px;border-radius:14px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;}
+/* ══ Itens de lista compartilhados (usados pelo Recebimento FLV) ══ */
 .peso-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .peso-list-title{font-family:var(--disp);font-size:15px;font-weight:800;color:var(--muted2);}
 .btn-clear-peso{background:none;border:none;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);padding:4px 8px;}
-.peso-item{background:var(--surf);border:1px solid var(--green-bd);border-radius:14px;margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
-.peso-item-icon{width:40px;height:40px;border-radius:11px;background:var(--green-bg);border:1px solid var(--green-bd);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.peso-item-info{flex:1;min-width:0;}
-.peso-item-val{font-family:var(--disp);font-size:22px;font-weight:900;color:var(--green);letter-spacing:-.5px;}
-.peso-item-meta{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);}
 .btn-del-peso{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;}
 .peso-empty{text-align:center;padding:32px 20px;color:var(--muted);}
-.peso-scan-live{display:none;}
-.peso-scan-live.ativo{display:block;}
-.ocr-loading{display:flex;align-items:center;gap:10px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:var(--accent);font-weight:600;}
-.ocr-loading .loader-sm{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-/* bottom peso */
-.peso-bottom{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));gap:10px;z-index:90;}
-.btn-peso-pdf{flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:13px;padding:14px;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn-peso-wa{flex:2;background:var(--wa);color:#fff;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:6px;}
+
+/* ── FLV: Recebimento com pesagem de paletes ── */
+.flv-status{background:var(--surf);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin:14px 0;display:flex;align-items:center;gap:12px;transition:border-color .2s,background .2s;}
+.flv-status.ok{border-color:var(--green-bd);background:var(--green-bg);}
+.flv-status.warn{border-color:var(--amber-bd);background:var(--amber-bg);}
+.flv-status-icon{font-size:26px;flex-shrink:0;}
+.flv-status-info{flex:1;}
+.flv-status-label{font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.7px;text-transform:uppercase;margin-bottom:3px;}
+.flv-status-val{font-family:var(--disp);font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.3px;}
+.flv-status.ok .flv-status-val{color:var(--green);}
+.flv-status.warn .flv-status-val{color:var(--amber);}
+.flv-calc-card{background:var(--surf);border:1.5px solid var(--border2);border-radius:16px;padding:16px 18px;margin-top:14px;}
+.flv-calc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--muted2);font-weight:600;font-family:var(--sans);}
+.flv-calc-row+.flv-calc-row{border-top:1px solid var(--border);}
+.flv-calc-row b{font-family:var(--mono);font-size:15px;color:var(--text);font-weight:700;}
+.flv-calc-final{padding-top:12px;}
+.flv-calc-final span{color:var(--text);font-size:14px;font-weight:800;}
+.flv-calc-final b{font-family:var(--disp);font-size:24px;font-weight:900;color:var(--amber);}
+.flv-resumo-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:13px;border-bottom:1px solid var(--border);}
+.flv-resumo-row:last-child{border-bottom:none;}
+.flv-resumo-row span{color:var(--muted2);font-weight:600;}
+.flv-resumo-row b{font-family:var(--mono);color:var(--text);font-weight:700;text-align:right;}
+.flv-pallet-item{background:var(--surf);border:1px solid var(--border);border-radius:12px;margin-bottom:7px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.flv-pallet-num{width:28px;height:28px;border-radius:8px;background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-family:var(--mono);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.flv-pallet-val{flex:1;font-family:var(--disp);font-size:17px;font-weight:800;color:var(--text);}
+
+/* Abas de fornecedores — permite alternar entre várias cargas em andamento */
+.flv-abas{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.flv-abas::-webkit-scrollbar{display:none;}
+.flv-aba{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 8px 8px 14px;border-radius:20px;background:var(--surf2);border:1.5px solid var(--border);font-size:12.5px;font-weight:700;font-family:var(--sans);color:var(--muted2);white-space:nowrap;cursor:pointer;max-width:150px;}
+.flv-aba span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;}
+.flv-aba.ativa{background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(251,146,60,.12));border-color:var(--amber);color:var(--amber);}
+.flv-aba-badge{background:var(--surf3);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);font-weight:800;flex-shrink:0;}
+.flv-aba.ativa .flv-aba-badge{background:var(--amber);color:#1a1206;}
+.flv-aba-x{background:none;border:none;opacity:.55;font-size:13px;padding:2px 4px;flex-shrink:0;color:inherit;cursor:pointer;font-family:var(--sans);}
+.flv-aba.ativa .flv-aba-x{opacity:.8;}
+.flv-aba-add{padding:8px 16px;border-radius:20px;border:1.5px dashed var(--border2);background:none;color:var(--muted);font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;}
 @media(max-height:680px){
   #sc-upload .scroll-body{justify-content:flex-start;padding-top:16px;}
   .hero-icon,.tri-icon{width:44px;height:44px;font-size:22px;margin-bottom:10px;}
@@ -501,15 +506,42 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- Script de login isolado -->
 <script>
 (function(){
-  var U={'DerlanG':'47291','MarioD':'83056','MarcosR':'61748','PedroL':'29403','Emanuel':'75812','ADM01':'33415447'};
+  // Os PINs não ficam mais em texto puro no código — só o hash (SHA-256 salgado) é armazenado.
+  // Ao logar, o app faz o mesmo hash do PIN digitado e compara os hashes, nunca o texto puro.
+  var SALT='vigil-wms-2026-salt';
+  var U={
+    'DerlanG':'1261f36907b36b248f4719759235b0a4cb346adcc1281f241cb8a75a60c43408',
+    'MarioD':'492fa3ee93bffbbed0baece0109eb01f5ec90b2de79a8be04948d9b11e76a88a',
+    'MarcosR':'7ddad8315adca8d59eca2704838eecc0d5cfe81b25270165149743f960aa2e7b',
+    'PedroL':'a1290b34592b6cca579dd4323cfea82b80ba1e1942cc2f42af96383f028d009b',
+    'Emanuel':'c80e26bf2847ff2a7d8f38f30b99a440aee5e056c56eb5ac7cbdfa498d18e755',
+    'ADM01':'4c8c99e2264659ad86169c9aaa23176242d11f219c6853006be2b48409fb2b9d'
+  };
+  async function sha256Hex(texto){
+    var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(texto));
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
   function nav(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});var e=document.getElementById(id);if(e)e.classList.add('active');}
-  window.fazerLogin=function(){
+  window.fazerLogin=async function(){
     var user=document.getElementById('loginUser').value;
     var pin=document.getElementById('loginPin').value;
     var err=document.getElementById('loginError');
     if(!user){err.textContent='Selecione um usuário';err.style.display='block';return;}
     if(!pin){err.textContent='Digite sua senha';err.style.display='block';return;}
-    if(U[user]!==pin){err.textContent='Senha incorreta.';err.style.display='block';document.getElementById('loginPin').value='';return;}
+    var btn=document.getElementById('btnLogin');
+    if(btn){btn.disabled=true;btn.style.opacity='.6';}
+    var hashDigitado;
+    try{
+      hashDigitado=await sha256Hex(SALT+pin);
+    }catch(e){
+      // Fallback: se crypto.subtle não estiver disponível (contexto não seguro/http), nega o acesso com aviso claro
+      err.textContent='Este dispositivo não suporta login seguro. Abra o app via HTTPS.';
+      err.style.display='block';
+      if(btn){btn.disabled=false;btn.style.opacity='1';}
+      return;
+    }
+    if(btn){btn.disabled=false;btn.style.opacity='1';}
+    if(U[user]!==hashDigitado){err.textContent='Senha incorreta.';err.style.display='block';document.getElementById('loginPin').value='';return;}
     err.style.display='none';
     window.currentUser=user;
     var b=document.getElementById('userBadge');if(b)b.textContent=user+' · sair';
@@ -539,12 +571,21 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <p>Registre itens por <b style="color:var(--text)">EAN, Código interno</b>, quantidade mista (cx+un), validade e avaria com quantidade.</p>
       <button class="btn-triagem" onclick="showScreen('sc-triagem')">📋 Iniciar Triagem</button>
     </div>
+
     <div class="or-divider">ou</div>
-    <div class="tri-card" style="border-color:var(--green-bd);">
-      <div class="tri-icon" style="background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(77,158,255,.1));border-color:var(--green-bd);">⚖️</div>
-      <h2 style="background:linear-gradient(90deg,var(--green),#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Peso de Caixas</h2>
-      <p>Aponte a câmera para a <b style="color:var(--text)">etiqueta impressa</b> da caixa. O app lê o peso automaticamente via OCR.</p>
-      <button class="btn-triagem" style="background:linear-gradient(135deg,var(--green),#16a34a);box-shadow:0 4px 24px rgba(34,197,94,.25);" onclick="showScreen('sc-peso')">⚖️ Escanear Peso</button>
+    <div class="tri-card" style="border-color:var(--amber-bd);">
+      <div class="tri-icon" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,146,60,.12));border-color:var(--amber-bd);">🥬</div>
+      <h2 style="background:linear-gradient(90deg,var(--amber),#FB923C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Recebimento FLV</h2>
+      <p>Pese os <b style="color:var(--text)">paletes</b>, aplique o desconto de qualidade e gere a mensagem pronta pro grupo.</p>
+      <button class="btn-triagem" style="background:linear-gradient(135deg,var(--amber),#FB923C);box-shadow:0 4px 24px rgba(245,158,11,.25);" onclick="abrirFlv()">🥬 Iniciar Recebimento</button>
+    </div>
+
+    <div class="or-divider">ou</div>
+    <div class="tri-card" style="border-color:var(--blue-bd);">
+      <div class="tri-icon" style="background:linear-gradient(135deg,rgba(77,158,255,.15),rgba(139,99,247,.1));border-color:var(--blue-bd);">📦</div>
+      <h2 style="background:linear-gradient(90deg,var(--blue),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Conferência por Peso</h2>
+      <p>Para caixas de <b style="color:var(--text)">papelão com peso padrão</b>. Pese a carga e o app calcula quantas caixas isso representa — sem contar uma por uma.</p>
+      <button class="btn-triagem" style="background:linear-gradient(135deg,var(--blue),var(--accent2));box-shadow:0 4px 24px rgba(77,158,255,.25);" onclick="abrirConfPeso()">📦 Iniciar Conferência</button>
     </div>
 
   </div>
@@ -828,152 +869,264 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════
-     TELA: PESO DE CAIXAS
-     ═══════════════════════════════════════ -->
-<div id="sc-peso" class="screen">
+
+<!-- ══════════════════════════════════════════
+     TELA: RECEBIMENTO FLV (pesagem de paletes + quebra)
+     ══════════════════════════════════════════ -->
+<div id="sc-flv" class="screen">
   <div class="topbar">
-    <button class="topbar-back" onclick="voltarHomePeso()">←</button>
-    <div class="topbar-logo">⚖️ Peso de Caixas</div>
-    <div class="topbar-right" id="pesoCount">0 reg.</div>
+    <button class="topbar-back" onclick="voltarHomeFlv()">←</button>
+    <div class="topbar-logo">🥬 Recebimento FLV</div>
+    <button class="topbar-back" style="font-size:15px;" onclick="abrirHistoricoFlv()" title="Histórico">📜</button>
+    <div class="topbar-right" id="flvCount">0 pal.</div>
   </div>
+
+  <!-- Abas de fornecedores — alterna entre vários recebimentos em andamento -->
+  <div class="flv-abas" id="flvAbas"></div>
+
   <div class="scroll-body">
-    <div style="padding:12px 14px 120px">
+    <div style="padding:12px 14px 40px">
 
-      <!-- Card resultado do scan -->
-      <div class="peso-status" id="pesoStatus">
-        <div class="peso-status-icon" id="pesoStatusIcon">⚖️</div>
-        <div class="peso-status-info">
-          <div class="peso-status-label">Último scan</div>
-          <div class="peso-status-val" id="pesoStatusVal">—</div>
-          <div class="peso-status-unit" id="pesoStatusUnit">Escaneie o código de barras da etiqueta</div>
+      <div class="tri-field">
+        <label class="tri-field-label">Fornecedor</label>
+        <input class="tri-inp" id="flvFornecedor" type="text" placeholder="Ex: Hortifruti Central" oninput="salvarCampoSessaoFlv('fornecedor',this.value)">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Fruta / Produto</label>
+        <input class="tri-inp" id="flvFruta" type="text" placeholder="Ex: Banana Prata" oninput="salvarCampoSessaoFlv('fruta',this.value)">
+      </div>
+
+      <!-- Contador de paletes pesados (não exige quantidade pré-definida) -->
+      <div class="flv-status" id="flvStatusBox">
+        <div class="flv-status-icon" id="flvStatusIcon">📦</div>
+        <div class="flv-status-info">
+          <div class="flv-status-label">Paletes pesados</div>
+          <div class="flv-status-val" id="flvStatusVal">0</div>
         </div>
       </div>
 
-      <!-- Campos preenchidos pelo scan -->
-      <div id="pesoScanCard" style="display:none;background:var(--green-bg);border:1.5px solid var(--green-bd);border-radius:14px;padding:14px 16px;margin-bottom:14px;">
-        <div style="font-size:11px;font-family:var(--mono);color:var(--green);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;font-weight:700;">✅ Dados lidos do código de barras</div>
-        <div id="pesoScanDados"></div>
-      </div>
-
-      <!-- Botão principal: scanner -->
-      <button class="btn-peso-scan" onclick="abrirScannerPeso()">
-        📷 Escanear Código de Barras
-      </button>
-
-      <!-- Separador -->
-      <div style="display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--muted);font-size:12px;font-family:var(--mono);">
-        <div style="flex:1;height:1px;background:var(--border);"></div>ou digitar manualmente<div style="flex:1;height:1px;background:var(--border);"></div>
-      </div>
-
-      <!-- Peso líquido -->
+      <!-- Adicionar peso de palete -->
       <div class="tri-field">
-        <label class="tri-field-label">Peso Líquido</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input class="tri-inp" id="pesoManual" type="number" inputmode="decimal" placeholder="0,000" step="0.001" min="0" style="flex:1">
-          <div style="display:flex;gap:5px;">
-            <button class="tri-unit-btn active" id="puKg" onclick="setPesoUnit('kg')">kg</button>
-            <button class="tri-unit-btn" id="puG" onclick="setPesoUnit('g')">g</button>
-          </div>
+        <label class="tri-field-label">Peso do Palete (kg)</label>
+        <div style="display:flex;gap:8px;">
+          <input class="tri-inp" id="flvPesoInput" type="number" inputmode="decimal" step="0.001" min="0" placeholder="0,000" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPesoPalete();}">
+          <button style="width:auto;padding:0 22px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--amber),#FB923C);color:#fff;font-size:15px;font-weight:800;font-family:var(--sans);cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,.25);" onclick="adicionarPesoPalete()">+ Add</button>
         </div>
       </div>
 
-      <!-- Peso bruto -->
-      <div class="tri-field">
-        <label class="tri-field-label">Peso Bruto <span style="color:var(--muted);font-size:10px;">(opcional)</span></label>
-        <input class="tri-inp" id="pesoBrutoManual" type="number" inputmode="decimal" placeholder="0,000" step="0.001" min="0">
+      <!-- Lista de pesos lançados -->
+      <div class="peso-list-header" style="margin-top:14px;">
+        <div class="peso-list-title">Pesos lançados</div>
+        <button class="btn-clear-peso" onclick="limparPesosFlv()">🗑 Limpar</button>
+      </div>
+      <div id="flvListaPesos"></div>
+
+      <!-- Conferência: quantidade de paletes recebida (opcional, feita depois de pesar) -->
+      <div class="tri-field" style="margin-top:18px;">
+        <label class="tri-field-label">Conferir Paletes Pesados</label>
+        <input class="tri-inp" id="flvQtdPaletes" type="number" inputmode="numeric" min="1" step="1" placeholder="Confira depois de pesar todos" oninput="salvarCampoSessaoFlv('qtdPaletes',this.value);renderFlvPesos()">
       </div>
 
-      <!-- Produto -->
+      <!-- Percentual de quebra -->
       <div class="tri-field">
-        <label class="tri-field-label">Produto <span style="color:var(--muted);font-size:10px;">(opcional)</span></label>
-        <input class="tri-inp" id="pesoObs" type="text" placeholder="Ex: Coxão Mole Friboi">
+        <label class="tri-field-label">Percentual Tirado (Qualidade)</label>
+        <input class="tri-inp" id="flvPercentual" type="number" inputmode="decimal" step="0.01" min="0" max="100" placeholder="Ex: 3,5" oninput="salvarCampoSessaoFlv('percentual',this.value);atualizarFlvCalculo()">
       </div>
 
-      <!-- Validade lida -->
-      <div class="tri-field">
-        <label class="tri-field-label">Validade <span style="color:var(--muted);font-size:10px;">(opcional)</span></label>
-        <input class="tri-inp" id="pesoValidade" type="text" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" oninput="this.value=maskDate(this.value)">
+      <!-- Card de cálculo automático -->
+      <div class="flv-calc-card">
+        <div class="flv-calc-row"><span>Peso Bruto Total</span><b id="flvCalcBruto">0,000 kg</b></div>
+        <div class="flv-calc-row"><span>Peso Retirado (<span id="flvCalcPct">0</span>%)</span><b id="flvCalcRetirado" style="color:var(--red)">0,000 kg</b></div>
+        <div class="flv-calc-row flv-calc-final"><span>Peso Líquido Final</span><b id="flvCalcLiquido">0,000 kg</b></div>
       </div>
 
-      <button class="btn-add-tri" onclick="registrarPeso()" style="background:linear-gradient(135deg,var(--green),#16a34a);box-shadow:0 4px 20px rgba(34,197,94,.2);">
-        <span style="font-size:18px">+</span> Registrar Peso
+      <button class="btn-add-tri" style="background:linear-gradient(135deg,var(--amber),#FB923C);box-shadow:0 4px 20px rgba(245,158,11,.2);margin-top:16px;" onclick="abrirResumoFlv()">
+        📋 Ver Resumo e Confirmar
       </button>
 
-      <!-- Lista -->
-      <div class="peso-list-header" style="margin-top:18px;">
-        <div class="peso-list-title">Pesos registrados</div>
-        <button class="btn-clear-peso" onclick="limparPesos()">🗑 Limpar</button>
-      </div>
-      <div id="pesoLista"></div>
     </div>
-  </div>
-
-  <div class="peso-bottom">
-    <button class="btn-peso-pdf" onclick="gerarPDFPeso()">📄 PDF</button>
-    <button class="btn-peso-wa" onclick="abrirWAPeso()">💬 WhatsApp</button>
   </div>
 </div>
 
-<!-- MODAL: SCANNER PESO (GS1-128) -->
-<div class="scan-overlay" id="pesoScanOverlay">
-  <video id="pesoVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
-  <div id="pesoScanViewport" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;"></div>
-
-  <div class="scan-topbar">
-    <div class="scan-title">⚖️ Código da Etiqueta</div>
-    <button class="scan-close" onclick="fecharScannerPeso()">✕ Fechar</button>
-  </div>
-
-  <!-- Caixa de scan larga para código GS1-128 longo -->
-  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-    <!-- Escurecimento fora da área -->
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);"></div>
-    <!-- Janela de leitura: larga e baixa -->
-    <div id="pesoBarcodeBox" style="position:relative;width:92%;height:90px;z-index:2;">
-      <!-- Limpa o escuro na janela -->
-      <div style="position:absolute;inset:0;background:transparent;mix-blend-mode:normal;"></div>
-      <!-- Cantos -->
-      <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:3px solid #22C55E;border-left:3px solid #22C55E;border-radius:3px 0 0 0;"></div>
-      <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:3px solid #22C55E;border-right:3px solid #22C55E;border-radius:0 3px 0 0;"></div>
-      <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:3px solid #22C55E;border-left:3px solid #22C55E;border-radius:0 0 0 3px;"></div>
-      <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid #22C55E;border-right:3px solid #22C55E;border-radius:0 0 3px 0;"></div>
-      <!-- Laser -->
-      <div style="position:absolute;top:50%;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,#22C55E,#22C55E,transparent);box-shadow:0 0 10px #22C55E;animation:laser 1.5s ease-in-out infinite;transform:translateY(-50%);"></div>
-    </div>
-  </div>
-
-  <!-- Instruções -->
-  <div style="position:absolute;bottom:160px;left:0;right:0;text-align:center;z-index:3;padding:0 20px;">
-    <div style="background:rgba(0,0,0,.7);border-radius:12px;padding:10px 16px;display:inline-block;">
-      <div style="color:#22C55E;font-size:12px;font-weight:700;font-family:var(--sans);margin-bottom:4px;">Aponte para o código longo da lateral</div>
-      <div style="color:rgba(255,255,255,.7);font-size:11px;font-family:var(--sans);">Aproxime até o código preencher toda a largura</div>
-    </div>
-  </div>
-
-  <div class="scan-result-flash" id="pesoScanFlash"></div>
-
-  <div class="scan-bottom" style="display:flex;gap:10px;">
-    <button class="scan-cam-toggle" style="flex:1" onclick="trocarCameraPeso()">🔄 Câmera</button>
-    <button class="scan-cam-toggle" style="flex:2;background:rgba(34,197,94,.25);border-color:#22C55E;color:#22C55E;font-weight:700;" onclick="capturarFotoCodigoBarras()">📸 Tirar Foto</button>
-  </div>
-</div>
-
-<!-- MODAL: WHATSAPP PESO -->
-<div class="overlay" id="modalWAPeso" onclick="bgClose('modalWAPeso')">
+<!-- MODAL: RESUMO / CONFIRMAÇÃO FLV -->
+<div class="overlay" id="modalFlvResumo" onclick="bgClose('modalFlvResumo')">
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">💬 Enviar Pesos</div>
-    <div class="sheet-sub">Escreva uma mensagem para acompanhar o relatório.</div>
-    <div class="wa-note">📎 No celular: WhatsApp abre com a mensagem. Anexe o PDF pelo clipe 📎.</div>
-    <textarea class="wa-textarea" id="waTxtPeso" placeholder="Ex: Pesagem das caixas realizada hoje..."></textarea>
-    <div class="sheet-btns">
-      <button class="btn-cancel" onclick="bgClose('modalWAPeso')">Cancelar</button>
-      <button class="btn-wa-send" onclick="enviarWAPeso()">Abrir WhatsApp →</button>
+    <div class="sheet-title">📋 Confira antes de enviar</div>
+    <div class="sheet-sub">Revise os dados do recebimento. Se algo estiver errado, toque em Corrigir.</div>
+    <div id="flvResumoConteudo"></div>
+    <div class="sheet-btns" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="bgClose('modalFlvResumo')">Corrigir</button>
+      <button class="btn-wa-send" style="background:linear-gradient(135deg,var(--amber),#FB923C);flex:2;" onclick="confirmarFlv()">✓ Confirmar</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL: MENSAGEM FINAL FLV -->
+<div class="overlay" id="modalFlvMsg" onclick="bgClose('modalFlvMsg')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">💬 Mensagem para o grupo</div>
+    <div class="sheet-sub">Copie ou envie direto pelo WhatsApp.</div>
+    <textarea class="wa-textarea" id="flvMsgTxt" style="height:150px;font-family:var(--mono);font-size:12.5px;line-height:1.6;" readonly></textarea>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="copiarMsgFlv()">📋 Copiar</button>
+      <button class="btn-wa-send" onclick="enviarWAFlv()">💬 WhatsApp</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--muted);font-size:11px;font-family:var(--mono);">
+      <div style="flex:1;height:1px;background:var(--border);"></div>LISTA DETALHADA DOS PESOS<div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <div class="sheet-sub" style="margin-bottom:10px;">Fica salva no app e pode ser enviada à parte — útil para conferir manualmente se algo não bater.</div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="copiarListaFlv()">📋 Copiar Lista</button>
+      <button class="btn-wa-send" style="background:var(--surf3);color:var(--text);border:1px solid var(--border2);" onclick="enviarWAListaFlv()">💬 Enviar Lista</button>
+    </div>
+    <button style="width:100%;text-align:center;margin-top:14px;background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;padding:8px;" onclick="novoRecebimentoFlv()">🔄 Novo Recebimento</button>
+  </div>
+</div>
+
+<!-- MODAL: HISTÓRICO FLV (fica salvo no aparelho para conferência manual) -->
+<div class="overlay" id="modalFlvHist" onclick="bgClose('modalFlvHist')">
+  <div class="sheet" onclick="event.stopPropagation()" style="max-height:80vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📜 Histórico de Recebimentos</div>
+    <div class="sheet-sub">Fica salvo neste aparelho — use para conferir manualmente se algo não bater.</div>
+    <div id="flvHistConteudo" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;"></div>
+    <button class="btn-cancel" style="width:100%;margin-top:14px;" onclick="bgClose('modalFlvHist')">Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL: DETALHE DE UM RECEBIMENTO DO HISTÓRICO -->
+<div class="overlay" id="modalFlvHistDet" onclick="bgClose('modalFlvHistDet')">
+  <div class="sheet" onclick="event.stopPropagation()" style="max-height:80vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="flvHistDetTitulo">Detalhe</div>
+    <div id="flvHistDetConteudo" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;"></div>
+    <div class="sheet-btns" style="margin-top:14px;">
+      <button class="btn-cancel" onclick="bgClose('modalFlvHistDet')">Fechar</button>
+      <button class="btn-wa-send" style="background:var(--surf3);color:var(--text);border:1px solid var(--border2);" onclick="copiarListaHistDet()">📋 Copiar Lista</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TELA: CONFERÊNCIA POR PESO (caixas de papelão, peso padrão)
+     ══════════════════════════════════════════ -->
+<div id="sc-confpeso" class="screen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="voltarHomeConfPeso()">←</button>
+    <div class="topbar-logo">📦 Conferência por Peso</div>
+    <div class="topbar-right" id="cpCount">0 cx</div>
+  </div>
+  <div class="scroll-body">
+    <div style="padding:12px 14px 40px">
+
+      <div class="tri-field">
+        <label class="tri-field-label">Fornecedor</label>
+        <input class="tri-inp" id="cpFornecedor" type="text" placeholder="Ex: Barroso">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Fruta / Produto</label>
+        <input class="tri-inp" id="cpFruta" type="text" placeholder="Ex: Tomate">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Peso Padrão da Caixa (kg)</label>
+        <input class="tri-inp" id="cpPesoPadrao" type="number" inputmode="decimal" step="0.001" min="0" placeholder="Ex: 8,500" oninput="atualizarCalculoCP()">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Caixas por Palete <span style="color:var(--muted);font-size:10px;">(quando cheio)</span></label>
+        <input class="tri-inp" id="cpCaixasPorPalete" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 40" oninput="atualizarCalculoCP()">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Paletes Completos <span style="color:var(--muted);font-size:10px;">(cheios, com o padrão)</span></label>
+        <input class="tri-inp" id="cpQtdPaletes" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 3" oninput="atualizarCalculoCP()">
+      </div>
+
+      <!-- Paletes incompletos: vem com menos caixas que o padrão -->
+      <div class="tri-field">
+        <label class="tri-field-label">Palete Incompleto <span style="color:var(--muted);font-size:10px;">(quantas caixas tem esse palete)</span></label>
+        <div style="display:flex;gap:8px;">
+          <input class="tri-inp" id="cpIncompletoInput" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 27" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarIncompletoCP();}">
+          <button style="width:auto;padding:0 22px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--accent2));color:#fff;font-size:15px;font-weight:800;font-family:var(--sans);cursor:pointer;box-shadow:0 4px 16px rgba(77,158,255,.25);" onclick="adicionarIncompletoCP()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="peso-list-header" style="margin-top:10px;">
+        <div class="peso-list-title">Paletes incompletos lançados</div>
+        <button class="btn-clear-peso" onclick="limparIncompletosCP()">🗑 Limpar</button>
+      </div>
+      <div id="cpListaIncompletos"></div>
+
+      <div class="tri-field" style="margin-top:18px;">
+        <label class="tri-field-label">Quantidade de Caixas Esperada <span style="color:var(--muted);font-size:10px;">(conforme NF, opcional)</span></label>
+        <input class="tri-inp" id="cpQtdEsperada" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 120" oninput="atualizarCalculoCP()">
+      </div>
+
+      <div class="tri-field">
+        <label class="tri-field-label">Percentual Retirado (Qualidade)</label>
+        <input class="tri-inp" id="cpPercentual" type="number" inputmode="decimal" step="0.01" min="0" max="100" placeholder="Ex: 3,5" oninput="atualizarCalculoCP()">
+      </div>
+
+      <!-- Card de cálculo automático -->
+      <div class="flv-calc-card" style="margin-top:18px;">
+        <div class="flv-calc-row"><span>Paletes Completos</span><b id="cpCalcConta">0 × 0</b></div>
+        <div class="flv-calc-row" id="cpCalcIncRow" style="display:none;"><span>Paletes Incompletos</span><b id="cpCalcInc">0 pal. · 0 cx</b></div>
+        <div class="flv-calc-row"><span>Total de Caixas</span><b id="cpCalcCaixas">0</b></div>
+        <div class="flv-calc-row"><span>Peso Recebido</span><b id="cpCalcTotal">0,000 kg</b></div>
+        <div class="flv-calc-row"><span>Peso Retirado (<span id="cpCalcPct">0</span>%)</span><b id="cpCalcRetirado" style="color:var(--red)">0,000 kg</b></div>
+        <div class="flv-calc-row flv-calc-final"><span>Peso Lançado no Sistema</span><b id="cpCalcLiquido">0,000 kg</b></div>
+      </div>
+
+      <!-- Status: bate ou não bate com a NF -->
+      <div class="flv-status" id="cpStatusBox" style="margin-top:14px;">
+        <div class="flv-status-icon" id="cpStatusIcon">📦</div>
+        <div class="flv-status-info">
+          <div class="flv-status-label" id="cpStatusLabel">Diferença com a NF</div>
+          <div class="flv-status-val" id="cpStatusVal">—</div>
+        </div>
+      </div>
+
+      <button class="btn-add-tri" style="background:linear-gradient(135deg,var(--blue),var(--accent2));box-shadow:0 4px 20px rgba(77,158,255,.2);margin-top:16px;" onclick="abrirResumoCP()">
+        📋 Ver Resumo e Confirmar
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RESUMO CONFERÊNCIA POR PESO -->
+<div class="overlay" id="modalCpResumo" onclick="bgClose('modalCpResumo')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📋 Confira antes de enviar</div>
+    <div class="sheet-sub">Revise os dados da conferência. Se algo estiver errado, toque em Corrigir.</div>
+    <div id="cpResumoConteudo"></div>
+    <div class="sheet-btns" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="bgClose('modalCpResumo')">Corrigir</button>
+      <button class="btn-wa-send" style="background:linear-gradient(135deg,var(--blue),var(--accent2));flex:2;" onclick="confirmarCP()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MENSAGEM FINAL CONFERÊNCIA POR PESO -->
+<div class="overlay" id="modalCpMsg" onclick="bgClose('modalCpMsg')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">💬 Resultado da Conferência</div>
+    <div class="sheet-sub">Copie ou envie direto pelo WhatsApp.</div>
+    <textarea class="wa-textarea" id="cpMsgTxt" style="height:210px;font-family:var(--mono);font-size:12.5px;line-height:1.6;" readonly></textarea>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="copiarMsgCP()">📋 Copiar</button>
+      <button class="btn-wa-send" onclick="enviarWACP()">💬 WhatsApp</button>
+    </div>
+    <button style="width:100%;text-align:center;margin-top:14px;background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;padding:8px;" onclick="novaConferenciaCP()">🔄 Nova Conferência</button>
+  </div>
+</div>
 
 <div class="scan-overlay" id="scanOverlay">
   <video id="scanVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0;"></video>
@@ -1012,23 +1165,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div class="toast" id="toast"></div>
 
 <script>
-try{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}catch(e){}
+try{
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}catch(e){console.warn('pdfjs:',e);}
 
-/* ── USUÁRIOS ── */
-const USERS={
-  'DerlanG':'47291',
-  'MarioD':'83056',
-  'MarcosR':'61748',
-  'PedroL':'29403',
-  'Emanuel':'75812',
-  'ADM01':'33415447'
-};
-let currentUser=null;
+try{
+
+/* ── USUÁRIO LOGADO ──
+   (as credenciais reais ficam só no script de login isolado, como hash) */
 
 /* ── LOGIN (funções adicionais) ── */
 function logout(){
   mostrarConfirm('Sair do Vigil?','🔒',()=>{
-    currentUser=null;enderecos=[];filtrados=[];triagemItens=[];lastPdfBlob=null;lastTriPdfBlob=null;
+    window.currentUser=null;enderecos=[];filtrados=[];triagemItens=[];lastPdfBlob=null;lastTriPdfBlob=null;
     document.getElementById('bottomBar').classList.remove('show');
     document.getElementById('searchInp').value='';
     showScreen('sc-login');
@@ -1289,7 +1438,7 @@ async function gerarPDFTriagem(){
     doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
     doc.text('VIGIL · TRIAGEM DE PRODUTOS',14,10);
     doc.setFontSize(7);doc.setFont(undefined,'normal');
-    doc.text('Gerado: '+ds+'  |  Operador: '+(currentUser||'—'),14,16);
+    doc.text('Gerado: '+ds+'  |  Operador: '+(window.currentUser||'—'),14,16);
     const ava=triagemItens.filter(i=>i.avariado).length;
     doc.setFillColor(240,245,255);doc.rect(0,22,297,9,'F');
     doc.setTextColor(30,58,138);doc.setFontSize(7);doc.setFont(undefined,'bold');
@@ -1374,663 +1523,5 @@ async function extrairItensPDF(file){
       if(mFallback){const vp=mFallback[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];const resto=linha.slice(mFallback[0].length).trim();const mResto=resto.match(/(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)/);todoItens.push({id:todoItens.length,deposito:mFallback[1],endereco:mFallback[2],codigo:mFallback[3],descricao:mFallback[4].trim(),norma:mFallback[5],validade:vp.join('/'),nrPalete:mResto?mResto[1]:'',dtaEntr:mResto&&mResto[2]?mResto[2]:'',embalagem:mResto?mResto[3]:'',unidade:mResto?mResto[4]:'',status:'Alocado',confirmado:false});}
     });
   }
-  const vistos=new Set();return todoItens.filter(it=>{const key=it.endereco+'|'+it.codigo;if(vistos.has(key))return false;vistos.add(key);return true;});
-}
-
-/* ── AUDITORIA ── */
-function filtrar(){const q=(document.getElementById('searchInp').value||'').toLowerCase();filtrados=q?enderecos.filter(e=>e.endereco.toLowerCase().includes(q)||e.codigo.toLowerCase().includes(q)||e.descricao.toLowerCase().includes(q)):[...enderecos];renderCards();}
-function renderLista(){atualizarProgresso();filtrados=[...enderecos];renderCards();}
-function atualizarProgresso(){const done=enderecos.filter(e=>e.confirmado).length,total=enderecos.length,pct=total?Math.round(done/total*100):0;document.getElementById('topProg').textContent=`${done}/${total}`;document.getElementById('progPct').textContent=pct+'%';document.getElementById('progFill').style.width=pct+'%';}
-function renderCards(){
-  const lista=document.getElementById('listaEnd');lista.innerHTML='';
-  const done=enderecos.filter(e=>e.confirmado).length;
-  const banner=document.createElement('div');banner.className='all-done-banner'+(done===enderecos.length&&enderecos.length>0?' show':'');
-  banner.innerHTML=`<span style="font-size:24px">🎉</span><p><b>Auditoria concluída!</b><br>Todos os endereços conferidos. Gere o PDF.</p>`;lista.appendChild(banner);
-  filtrados.forEach(en=>{
-    const st=en.confirmado?{cls:'done',label:'✓ Conferido'}:getStatus(en.validade);
-    const card=document.createElement('div');card.className='end-card'+(en.confirmado?' done':'');
-    card.innerHTML=`<div class="end-row"><div class="end-icon">${en.confirmado?'✅':'📍'}</div><div class="end-info"><div class="end-addr">${en.endereco}</div><div class="end-prod">${en.descricao}</div><div class="end-meta">${en.codigo} · ${en.norma} · ${en.validade||'—'}</div></div><span class="end-badge ${st.cls}">${st.label}</span><span class="end-arrow">›</span></div>`;
-    card.onclick=()=>abrirDetalhe(en.id);lista.appendChild(card);
-  });
-}
-function checkAllDone(){const done=enderecos.filter(e=>e.confirmado).length;if(done===enderecos.length&&enderecos.length>0){document.getElementById('bottomBar').classList.add('show');document.getElementById('btnWa').disabled=false;}}
-function abrirDetalhe(id){currentIdx=enderecos.findIndex(e=>e.id===id);renderDetalhe();showScreen('sc-detalhe');}
-function voltarLista(){atualizarProgresso();filtrar();checkAllDone();showScreen('sc-enderecos');}
-function renderDetalhe(){
-  const en=enderecos[currentIdx];const st=getStatus(en.validade);const pos=`${currentIdx+1}/${enderecos.length}`;
-  document.getElementById('detPos').textContent=pos;
-  const temAnt=currentIdx>0,temProx=currentIdx<enderecos.length-1;
-  document.getElementById('detConteudo').innerHTML=`
-  <div style="padding:14px 14px 120px">
-    <div class="det-addr-tag"><span style="font-size:22px">📍</span><div><div class="addr-text">${en.endereco}</div><div class="addr-sub">Depósito ${en.deposito} · ${pos}</div></div></div>
-    <div class="info-block ${en.confirmado?'done':''}">
-      <div class="info-row"><span class="info-label">Código</span><span class="info-val mono">${en.codigo}</span></div>
-      <div class="info-row"><span class="info-label">Descrição</span><span class="info-val" style="font-size:12px;line-height:1.5">${en.descricao}</span></div>
-      <div class="info-row"><span class="info-label">Norma</span><span class="info-val mono">${en.norma||'—'}</span></div>
-      <div class="info-row"><span class="info-label">Embalagem</span><span class="info-val mono">${en.embalagem||'—'}</span></div>
-      <div class="info-row"><span class="info-label">Unidade</span><span class="info-val mono">${en.unidade||'—'}</span></div>
-      ${en.dtaEntr?`<div class="info-row"><span class="info-label">Dt. Entrada</span><span class="info-val mono">${en.dtaEntr}</span></div>`:''}
-      ${en.nrPalete?`<div class="info-row"><span class="info-label">Nr. Palete</span><span class="info-val mono">${en.nrPalete}</span></div>`:''}
-    </div>
-    <div class="info-block ${en.confirmado?'done':''}">
-      <div class="val-row">
-        <div class="val-dot ${en.confirmado?'ok':st.cls}"></div>
-        <span class="val-label">Validade</span>
-        <div style="flex:1"><div class="val-data-big">${en.validade||'—'}</div><div class="val-status-txt">${en.confirmado?'✓ Confirmada':st.label}</div></div>
-        <button class="btn-edit" onclick="abrirEditar()">${en.confirmado?'✏ Corrigir':'✏ Editar'}</button>
-      </div>
-    </div>
-    ${en.confirmado?`<div class="done-check"><span style="font-size:20px">✅</span> Validade confirmada e registrada</div>`:''}
-    <div class="nav-btns">
-      <button class="btn-nav" onclick="navegar(-1)" ${!temAnt?'disabled':''}>← Anterior</button>
-      ${temProx?`<button class="btn-nav primary" onclick="navegar(1)">Próximo →</button>`:`<button class="btn-nav primary" onclick="voltarLista()">Ver lista ✓</button>`}
-    </div>
-  </div>`;
-}
-function navegar(dir){currentIdx=Math.max(0,Math.min(enderecos.length-1,currentIdx+dir));renderDetalhe();}
-function abrirEditar(){
-  const en=enderecos[currentIdx];document.getElementById('editSub').textContent=en.endereco+' · '+en.descricao;
-  document.getElementById('dateInp').value=en.validade||'';document.getElementById('modalEdit').classList.add('open');
-  setTimeout(()=>document.getElementById('dateInp').focus(),250);
-}
-function pedirConf(){
-  const val=document.getElementById('dateInp').value.trim();
-  if(val&&!isValidDate(val)){showToast('❌ Data inválida! Use DD/MM/AAAA');return;}
-  pendingVal=val;bgClose('modalEdit');
-  const en=enderecos[currentIdx];
-  document.getElementById('confMsg').textContent=`Alterar validade de "${en.descricao.slice(0,40)}" para:`;
-  document.getElementById('confVal').textContent=val||'(sem data)';document.getElementById('modalConf').classList.add('open');
-}
-function confirmarAlteracao(){
-  enderecos[currentIdx].validade=pendingVal||null;enderecos[currentIdx].confirmado=true;
-  bgClose('modalConf');showToast('✅ Validade confirmada!');renderDetalhe();atualizarProgresso();filtrar();checkAllDone();
-}
-
-/* ── GERAR PDF AUDITORIA ── */
-async function gerarPDF(){
-  showToast('⏳ Gerando PDF...');
-  try{
-    const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const now=new Date();
-    const ds=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    doc.setFillColor(77,158,255);doc.rect(0,0,297,22,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
-    doc.text('VIGIL · AUDITORIA WMS · RELATÓRIO DE VALIDADES',14,10);doc.setFontSize(7);doc.setFont(undefined,'normal');
-    doc.text('Arquivo: '+pdfFileName+'  |  Operador: '+(currentUser||'—'),14,16);doc.text('Gerado: '+ds,200,16);
-    const conf=enderecos.filter(e=>e.confirmado).length;
-    doc.setFillColor(245,248,255);doc.rect(0,22,297,9,'F');doc.setTextColor(30,58,138);doc.setFontSize(7);doc.setFont(undefined,'bold');
-    doc.text(`Total: ${enderecos.length}   Conferidos: ${conf}   Pendentes: ${enderecos.length-conf}`,14,28);
-    doc.autoTable({
-      startY:33,head:[['Endereço','Código','Descrição','Norma','Validade','Embalagem','Unidade','Dt.Entrada','Status']],
-      body:enderecos.map(en=>{const st=en.confirmado?{label:'✓ Conferido'}:getStatus(en.validade);return[en.endereco,en.codigo,en.descricao,en.norma||'—',en.validade||'—',en.embalagem||'—',en.unidade||'—',en.dtaEntr||'—',st.label];}),
-      headStyles:{fillColor:[77,158,255],textColor:255,fontStyle:'bold',fontSize:6},bodyStyles:{fontSize:6},alternateRowStyles:{fillColor:[248,250,252]},
-      columnStyles:{0:{cellWidth:28},1:{cellWidth:18},2:{cellWidth:70},3:{cellWidth:14,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:16,halign:'center'},6:{cellWidth:16,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:26,halign:'center'}},
-      margin:{left:14,right:14},theme:'grid'
-    });
-    const pages=doc.internal.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,283,205,{align:'right'});}
-    lastPdfBlob=doc.output('blob');const a=document.createElement('a');a.href=URL.createObjectURL(lastPdfBlob);
-    a.download='auditoria-wms-'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf';a.click();showToast('✅ PDF gerado!');
-  }catch(e){showToast('❌ Erro: '+e.message);console.error(e);}
-}
-
-/* ── WHATSAPP ── */
-function abrirWA(){if(!lastPdfBlob){gerarPDF().then(()=>setTimeout(()=>document.getElementById('modalWA').classList.add('open'),1000));return;}document.getElementById('waTxt').value='';document.getElementById('modalWA').classList.add('open');}
-async function enviarWA(){
-  const msg=document.getElementById('waTxt').value.trim()||'Auditoria WMS concluída. Segue relatório 📦';bgClose('modalWA');
-  if(lastPdfBlob&&navigator.canShare){const file=new File([lastPdfBlob],'auditoria-wms.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
-  const conf=enderecos.filter(e=>e.confirmado).length;
-  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n📊 Auditoria WMS\n✅ Conferidos: '+conf+'\n📦 Total: '+enderecos.length+'\n\n_PDF salvo — anexe pelo clipe 📎_');
-  window.location.href=url;
-  showToast('💬 Abrindo WhatsApp...');
-}
-function abrirWATriagem(){if(triagemItens.length===0){showToast('❌ Nenhum item registrado');return;}document.getElementById('waTxtTri').value='';document.getElementById('modalWATri').classList.add('open');}
-async function enviarWATriagem(){
-  const msg=document.getElementById('waTxtTri').value.trim()||'Triagem de produtos realizada. Segue relatório 📦';bgClose('modalWATri');
-  if(!lastTriPdfBlob)await gerarPDFTriagem();
-  if(lastTriPdfBlob&&navigator.canShare){const file=new File([lastTriPdfBlob],'triagem.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
-  const ava=triagemItens.filter(i=>i.avariado).length;
-  const linhas=triagemItens.slice(0,15).map((it,i)=>`${i+1}. ${it.descricao||'EAN:'+it.ean}${it.codigo?' ['+it.codigo+']':''} — ${getQtyText(it)}${it.validade?' Venc:'+it.validade:''}${it.avariado?' ⚠️AVARIADO'+(it.avaQtd?' ('+it.avaQtd+it.avaUnit+')':''):''}`).join('\n');
-  const extra=triagemItens.length>15?`\n...e mais ${triagemItens.length-15} itens`:'';
-  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n🔍 TRIAGEM DE PRODUTOS\n📦 Total: '+triagemItens.length+'\n✅ Conformes: '+(triagemItens.length-ava)+'\n⚠️ Avariados: '+ava+'\n\n'+linhas+extra+'\n\n_PDF salvo — anexe pelo clipe 📎_');
-  window.location.href=url;
-  showToast('💬 Abrindo WhatsApp...');
-}
-
-/* ── UTILS ── */
-function maskDate(v){let n=v.replace(/\D/g,'');if(n.length>=3)n=n.slice(0,2)+'/'+n.slice(2);if(n.length>=6)n=n.slice(0,5)+'/'+n.slice(5,9);return n;}
-function isValidDate(s){const p=s.split('/');if(p.length!==3||p[2].length!==4)return false;const d=new Date(+p[2],+p[1]-1,+p[0]);return!isNaN(d)&&d.getDate()===+p[0];}
-function bgClose(id){document.getElementById(id).classList.remove('open');}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
-
-/* ── MODAL CONFIRM CUSTOMIZADO (substitui confirm() nativo) ── */
-let _confirmCb=null;
-function mostrarConfirm(msg,icone,cb){
-  _confirmCb=cb;
-  document.getElementById('apkConfMsg').textContent=msg;
-  document.getElementById('apkConfIcon').textContent=icone||'❓';
-  document.getElementById('modalApkConf').classList.add('open');
-}
-function apkConfSim(){bgClose('modalApkConf');if(_confirmCb)_confirmCb();}
-function apkConfNao(){bgClose('modalApkConf');_confirmCb=null;}
-
-function resetApp(){
-  mostrarConfirm('Voltar ao início?','🏠',()=>{
-    enderecos=[];filtrados=[];currentIdx=null;lastPdfBlob=null;pdfFileName='';
-    document.getElementById('bottomBar').classList.remove('show');
-    document.getElementById('searchInp').value='';
-    showScreen('sc-upload');
-  });
-}
-
-/* ── SCANNER DE EAN — BarcodeDetector nativo + fallback foto ── */
-let scanStream=null, scannerAtivo=false, scanAnimFrame=null, usarFrontal=false;
-
-async function abrirScanner(){
-  document.getElementById('scanOverlay').classList.add('open');
-  document.getElementById('scanHint').textContent='Iniciando câmera...';
-
-  // Tenta abrir câmera
-  try{
-    const constraints={video:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}};
-    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
-    const video=document.getElementById('scanVideo');
-    video.srcObject=scanStream;
-    await video.play();
-  }catch(e){
-    fecharScanner();
-    showToast('❌ Câmera bloqueada — use o botão 📷 Foto');
-    usarFallbackCamera();
-    return;
-  }
-
-  // Tenta BarcodeDetector nativo (mais confiável no APK)
-  if('BarcodeDetector' in window){
-    document.getElementById('scanHint').textContent='Aponte para o código de barras';
-    iniciarBarcodeDetector();
-    return;
-  }
-
-  // Fallback: QuaggaJS no video element
-  document.getElementById('scanHint').textContent='Aponte para o código (QuaggaJS)';
-  iniciarQuagga();
-}
-
-/* ── BarcodeDetector nativo (Chrome/APK) ── */
-function iniciarBarcodeDetector(){
-  const video=document.getElementById('scanVideo');
-  const detector=new BarcodeDetector({
-    formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']
-  });
-  scannerAtivo=true;
-
-  async function loop(){
-    if(!scannerAtivo)return;
-    try{
-      if(video.readyState>=2){
-        const codes=await detector.detect(video);
-        if(codes&&codes.length>0){
-          const code=codes[0].rawValue;
-          if(/\d/.test(code)){
-            scannerAtivo=false;
-            if(navigator.vibrate)navigator.vibrate([80,40,80]);
-            const flash=document.getElementById('scanFlash');
-            flash.classList.add('flash');
-            setTimeout(()=>flash.classList.remove('flash'),200);
-            document.getElementById('triEan').value=code;
-            setTimeout(()=>{
-              fecharScanner();
-              showToast('✅ EAN: '+code);
-              document.getElementById('triCodigo').focus();
-            },300);
-            return;
-          }
-        }
-      }
-    }catch(e){}
-    scanAnimFrame=requestAnimationFrame(loop);
-  }
-  loop();
-}
-
-/* ── QuaggaJS fallback (navegador sem BarcodeDetector) ── */
-function iniciarQuagga(){
-  if(typeof Quagga==='undefined'){usarFallbackCamera();return;}
-  const vp=document.getElementById('scanViewport');
-  vp.style.display='block';
-  Quagga.init({
-    inputStream:{type:'LiveStream',target:vp,
-      constraints:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}},
-    locator:{patchSize:'medium',halfSample:true},
-    numOfWorkers:0,
-    decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
-    locate:true,
-  },err=>{
-    if(err){showToast('❌ Quagga: '+err.message);fecharScanner();return;}
-    Quagga.start();
-    scannerAtivo=true;
-  });
-  Quagga.offDetected();
-  Quagga.onDetected(data=>{
-    const code=data.codeResult.code;
-    if(!/^\d+$/.test(code))return;
-    if(navigator.vibrate)navigator.vibrate([80,40,80]);
-    const flash=document.getElementById('scanFlash');
-    flash.classList.add('flash');
-    setTimeout(()=>flash.classList.remove('flash'),200);
-    document.getElementById('triEan').value=code;
-    setTimeout(()=>{fecharScanner();showToast('✅ EAN: '+code);document.getElementById('triCodigo').focus();},350);
-  });
-}
-
-/* ── Fallback: tira foto e lê o código ── */
-function usarFallbackCamera(){
-  fecharScanner();
-  const inp=document.createElement('input');
-  inp.type='file';inp.accept='image/*';
-  inp.setAttribute('capture','environment');
-  inp.style.display='none';
-  document.body.appendChild(inp);
-  inp.onchange=async()=>{
-    const file=inp.files[0];
-    document.body.removeChild(inp);
-    if(!file){showToast('❌ Nenhuma foto');return;}
-    showToast('🔍 Lendo código...');
-
-    // Tenta BarcodeDetector na imagem
-    if('BarcodeDetector' in window){
-      try{
-        const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39']});
-        const img=await createImageBitmap(file);
-        const codes=await bd.detect(img);
-        if(codes.length>0){
-          const code=codes[0].rawValue;
-          document.getElementById('triEan').value=code;
-          showToast('✅ EAN: '+code);
-          if(navigator.vibrate)navigator.vibrate([80,40,80]);
-          document.getElementById('triCodigo').focus();
-          return;
-        }
-        showToast('❌ Código não encontrado. Tente mais perto.');return;
-      }catch(e){}
-    }
-
-    // Tenta Quagga decodeSingle
-    if(typeof Quagga!=='undefined'){
-      const url=URL.createObjectURL(file);
-      Quagga.decodeSingle({
-        decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
-        locate:true,src:url
-      },result=>{
-        URL.revokeObjectURL(url);
-        if(result&&result.codeResult){
-          document.getElementById('triEan').value=result.codeResult.code;
-          showToast('✅ EAN: '+result.codeResult.code);
-          document.getElementById('triCodigo').focus();
-        }else{
-          showToast('❌ Não leu. Tente digitar o código.');
-        }
-      });
-    }else{
-      showToast('❌ Leitor indisponível. Digite o código manualmente.');
-    }
-  };
-  inp.click();
-}
-
-function trocarCamera(){
-  usarFrontal=!usarFrontal;
-  fecharScanner();
-  setTimeout(abrirScanner,300);
-  showToast(usarFrontal?'📷 Câmera frontal':'📷 Câmera traseira');
-}
-
-function fecharScanner(){
-  scannerAtivo=false;
-  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
-  const video=document.getElementById('scanVideo');
-  if(video){video.srcObject=null;}
-  if(typeof Quagga!=='undefined'){try{Quagga.stop();}catch(e){}}
-  const vp=document.getElementById('scanViewport');
-  if(vp){vp.innerHTML='';vp.style.display='none';}
-  document.getElementById('scanOverlay').classList.remove('open');
-}
-
-/* ══════════════════════════════════════════
-   TELA: PESO DE CAIXAS — GS1-128
-   ══════════════════════════════════════════ */
-let pesosRegistrados=[], pesoUnit='kg', pesoCamStream=null, pesoCamAtivo=false,
-    pesoCamFrame=null, pesoCamFrontal=false, lastPesoPdfBlob=null;
-
-function voltarHomePeso(){
-  if(pesosRegistrados.length>0){
-    mostrarConfirm('Voltar? Os pesos serão perdidos.','⚠️',()=>{
-      pesosRegistrados=[];fecharScannerPeso();showScreen('sc-upload');
-    });return;
-  }
-  fecharScannerPeso();showScreen('sc-upload');
-}
-function setPesoUnit(u){
-  pesoUnit=u;
-  ['Kg','G'].forEach(x=>{const b=document.getElementById('pu'+x);if(b)b.classList.toggle('active',x.toLowerCase()===u);});
-}
-
-/* ── Parser GS1-128 — versão robusta com regex ── */
-function parseGS1(raw){
-  const result={pesoLiquido:null,pesoBruto:null,validade:null,gtin:null,pecas:null,raw};
-
-  // Remove parênteses, espaços, FNC1 e outros caracteres não-numéricos entre AIs
-  const s=raw.replace(/[() \n\r\t]/g,'');
-
-  // PESO LÍQUIDO — AI 310n (n=casas decimais, 6 dígitos)
-  // Ex: 3102002411 → 2411/100 = 24,11 kg
-  const mPL=s.match(/310([0-5])(\d{6})/);
-  if(mPL){
-    result.pesoLiquido=parseInt(mPL[2])/Math.pow(10,parseInt(mPL[1]));
-  }
-
-  // PESO BRUTO — AI 320n (6 dígitos)
-  const mPB=s.match(/320([0-5])(\d{6})/);
-  if(mPB){
-    result.pesoBruto=parseInt(mPB[2])/Math.pow(10,parseInt(mPB[1]));
-  }
-
-  // VALIDADE — AI 15 ou 17 (YYMMDD)
-  const mV=s.match(/(?:15|17)(\d{2})(\d{2})(\d{2})/);
-  if(mV){result.validade=`${mV[3]}/${mV[2]}/20${mV[1]}`;}
-
-  // GTIN — AI 01 (14 dígitos)
-  const mG=s.match(/01(\d{14})/);
-  if(mG){result.gtin=mG[1];}
-
-  // PEÇAS — AI 37
-  const mPC=s.match(/37(\d{1,8})/);
-  if(mPC){result.pecas=parseInt(mPC[1]);}
-
-  return result;
-}
-
-/* ── Mostrar resultado do GS1 na tela ── */
-function aplicarDadosGS1(dados,rawCode){
-  // Mostra sempre o código bruto lido para debug
-  let debugEl=document.getElementById('pesoDebug');
-  if(!debugEl){
-    debugEl=document.createElement('div');
-    debugEl.id='pesoDebug';
-    debugEl.style.cssText='background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;';
-    document.getElementById('pesoStatus').after(debugEl);
-  }
-  debugEl.innerHTML=`
-    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;margin-bottom:4px;">CÓDIGO LIDO:</div>
-    <div style="font-family:var(--mono);font-size:11px;color:var(--accent2);word-break:break-all;">${rawCode}</div>
-    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:6px;">
-      PL: ${dados.pesoLiquido??'—'} kg &nbsp;|&nbsp; 
-      PB: ${dados.pesoBruto??'—'} kg &nbsp;|&nbsp;
-      Val: ${dados.validade??'—'}
-    </div>`;
-  debugEl.style.display='block';
-
-  const pl=dados.pesoLiquido;
-  const pb=dados.pesoBruto;
-
-  if(!pl&&!pb){
-    document.getElementById('pesoStatusIcon').textContent='⚠️';
-    document.getElementById('pesoStatusVal').textContent='Sem peso';
-    document.getElementById('pesoStatusVal').className='peso-status-val';
-    document.getElementById('pesoStatusUnit').textContent='Código sem peso — veja o código lido acima e tente o código de barras LONGO da lateral';
-    document.getElementById('pesoScanCard').style.display='none';
-    showToast('⚠️ Peso não encontrado neste código');
-    return;
-  }
-
-  if(pl){document.getElementById('pesoManual').value=pl.toFixed(3);setPesoUnit('kg');}
-  if(pb)document.getElementById('pesoBrutoManual').value=pb.toFixed(3);
-  if(dados.validade)document.getElementById('pesoValidade').value=dados.validade;
-
-  document.getElementById('pesoStatusIcon').textContent='✅';
-  document.getElementById('pesoStatusVal').textContent=(pl||pb).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:3});
-  document.getElementById('pesoStatusVal').className='peso-status-val found';
-  document.getElementById('pesoStatusUnit').textContent='kg · Peso Líquido — lido do código GS1-128';
-
-  let html='';
-  if(pl) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO LÍQUIDO</div><div style="font-family:var(--disp);font-size:24px;font-weight:900;color:var(--green);">${pl.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
-  if(pb) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO BRUTO</div><div style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--accent);">${pb.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
-  if(dados.validade) html+=`<div style="margin-bottom:8px;"><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">VALIDADE</div><div style="font-size:14px;font-weight:700;color:var(--amber);">${dados.validade}</div></div>`;
-  if(dados.pecas) html+=`<div><div style="font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PEÇAS</div><div style="font-size:14px;font-weight:700;color:var(--text);">${dados.pecas}</div></div>`;
-  document.getElementById('pesoScanDados').innerHTML=html;
-  document.getElementById('pesoScanCard').style.display='block';
-
-  if(navigator.vibrate)navigator.vibrate([80,40,80]);
-  showToast('✅ Peso lido: '+(pl||pb).toFixed(3)+' kg');
-}
-
-/* ── Scanner de código de barras para peso ── */
-async function abrirScannerPeso(){
-  try{
-    pesoCamStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'environment',width:{ideal:3840,min:1280},height:{ideal:2160,min:720}}
-    });
-    const video=document.getElementById('pesoVideo');
-    video.srcObject=pesoCamStream;await video.play();
-    document.getElementById('pesoScanOverlay').classList.add('open');
-    pesoCamAtivo=true;
-    iniciarScannerPeso(video);
-  }catch(e){
-    try{
-      pesoCamStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-      const video=document.getElementById('pesoVideo');
-      video.srcObject=pesoCamStream;await video.play();
-      document.getElementById('pesoScanOverlay').classList.add('open');
-      pesoCamAtivo=true;
-      iniciarScannerPeso(video);
-    }catch(e2){showToast('❌ Câmera bloqueada. Use 📸 Tirar Foto.');}
-  }
-}
-
-/* ── Foto para leitura de código ── */
-function capturarFotoCodigoBarras(){
-  fecharScannerPeso();
-  const inp=document.createElement('input');
-  inp.type='file';inp.accept='image/*';
-  inp.setAttribute('capture','environment');
-  inp.style.display='none';
-  document.body.appendChild(inp);
-  inp.onchange=async()=>{
-    const file=inp.files[0];
-    document.body.removeChild(inp);
-    if(!file)return;
-    showToast('🔍 Lendo código...');
-    if('BarcodeDetector' in window){
-      try{
-        const bd=new BarcodeDetector({formats:['code_128','gs1_128','code_39','data_matrix','qr_code','ean_13','ean_8','upc_a']});
-        const img=await createImageBitmap(file);
-        const codes=await bd.detect(img);
-        if(codes&&codes.length>0){
-          // Testa todos os códigos encontrados, pega o que tem peso
-          let melhor=null;
-          for(const c of codes){
-            const d=parseGS1(c.rawValue);
-            if(d.pesoLiquido||d.pesoBruto){melhor={dados:d,raw:c.rawValue};break;}
-          }
-          if(!melhor)melhor={dados:parseGS1(codes[0].rawValue),raw:codes[0].rawValue};
-          aplicarDadosGS1(melhor.dados,melhor.raw);
-        }else{showToast('❌ Nenhum código encontrado. Tente mais perto e com boa luz.');}
-      }catch(e){showToast('❌ Erro: '+e.message);}
-    }else{showToast('❌ Leitor não suportado. Digite o peso manualmente.');}
-  };
-  inp.click();
-}
-
-function iniciarScannerPeso(video){
-  if('BarcodeDetector' in window){
-    const bd=new BarcodeDetector({formats:['code_128','gs1_128','code_39','data_matrix','qr_code','ean_13','ean_8','upc_a']});
-    let ultimo='',ultimoTs=0;
-    function loop(){
-      if(!pesoCamAtivo)return;
-      if(video.readyState>=2){
-        bd.detect(video).then(codes=>{
-          if(!pesoCamAtivo)return;
-          if(codes&&codes.length>0){
-            // Prioriza código com peso
-            let melhor=null;
-            for(const c of codes){
-              const d=parseGS1(c.rawValue);
-              if(d.pesoLiquido||d.pesoBruto){melhor={dados:d,raw:c.rawValue};break;}
-            }
-            if(!melhor)melhor={dados:parseGS1(codes[0].rawValue),raw:codes[0].rawValue};
-            const agora=Date.now();
-            if(melhor.raw===ultimo&&agora-ultimoTs<2000){pesoCamFrame=requestAnimationFrame(loop);return;}
-            ultimo=melhor.raw;ultimoTs=agora;
-            const flash=document.getElementById('pesoScanFlash');
-            flash.classList.add('flash');setTimeout(()=>flash.classList.remove('flash'),200);
-            pesoCamAtivo=false;
-            setTimeout(()=>{fecharScannerPeso();aplicarDadosGS1(melhor.dados,melhor.raw);},300);
-            return;
-          }
-          pesoCamFrame=requestAnimationFrame(loop);
-        }).catch(()=>{pesoCamFrame=requestAnimationFrame(loop);});
-      }else{pesoCamFrame=requestAnimationFrame(loop);}
-    }
-    loop();return;
-  }
-  // Fallback Quagga
-  if(typeof Quagga!=='undefined'){
-    const vp=document.getElementById('pesoScanViewport');vp.style.display='block';
-    Quagga.init({
-      inputStream:{type:'LiveStream',target:vp,constraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}},
-      decoder:{readers:['code_128_reader','ean_reader','ean_8_reader','code_39_reader','i2of5_reader']},
-      locate:true,numOfWorkers:0,
-    },err=>{if(err){showToast('❌ '+err.message);fecharScannerPeso();return;}Quagga.start();pesoCamAtivo=true;});
-    let ultimo='',ultimoTs=0;
-    Quagga.offDetected();
-    Quagga.onDetected(d=>{
-      const code=d.codeResult.code,agora=Date.now();
-      if(code===ultimo&&agora-ultimoTs<2000)return;
-      ultimo=code;ultimoTs=agora;
-      setTimeout(()=>{fecharScannerPeso();aplicarDadosGS1(parseGS1(code),code);},300);
-    });
-    return;
-  }
-  showToast('⚠️ Scanner não disponível. Use 📸 Tirar Foto.');
-}
-
-function trocarCameraPeso(){
-  pesoCamFrontal=!pesoCamFrontal;
-  fecharScannerPeso();
-  setTimeout(abrirScannerPeso,300);
-}
-function fecharScannerPeso(){
-  pesoCamAtivo=false;
-  if(pesoCamFrame){cancelAnimationFrame(pesoCamFrame);pesoCamFrame=null;}
-  if(pesoCamStream){pesoCamStream.getTracks().forEach(t=>t.stop());pesoCamStream=null;}
-  const v=document.getElementById('pesoVideo');if(v)v.srcObject=null;
-  if(typeof Quagga!=='undefined'){try{Quagga.stop();}catch(e){}}
-  const vp=document.getElementById('pesoScanViewport');if(vp){vp.innerHTML='';vp.style.display='none';}
-  document.getElementById('pesoScanOverlay').classList.remove('open');
-}
-
-/* ── Registrar peso ── */
-function registrarPeso(){
-  const raw=document.getElementById('pesoManual').value.trim();
-  if(!raw||isNaN(parseFloat(raw.replace(',','.')))){showToast('❌ Informe o peso líquido');document.getElementById('pesoManual').focus();return;}
-  const valor=parseFloat(raw.replace(',','.'));
-  const brutoRaw=document.getElementById('pesoBrutoManual').value.trim();
-  const bruto=brutoRaw?parseFloat(brutoRaw.replace(',','.')):null;
-  const obs=document.getElementById('pesoObs').value.trim();
-  const validade=document.getElementById('pesoValidade').value.trim();
-  pesosRegistrados.unshift({id:Date.now(),valor,unit:pesoUnit,bruto,obs,validade,hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
-  // Limpa form
-  ['pesoManual','pesoBrutoManual','pesoObs','pesoValidade'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('pesoScanCard').style.display='none';
-  document.getElementById('pesoStatusVal').textContent='—';
-  document.getElementById('pesoStatusVal').className='peso-status-val';
-  document.getElementById('pesoStatusIcon').textContent='⚖️';
-  document.getElementById('pesoStatusUnit').textContent='Escaneie o código de barras da etiqueta';
-  renderPesos();showToast('✅ Peso registrado!');
-}
-function removerPeso(id){pesosRegistrados=pesosRegistrados.filter(p=>p.id!==id);renderPesos();}
-function limparPesos(){
-  if(pesosRegistrados.length===0)return;
-  mostrarConfirm('Limpar todos os '+pesosRegistrados.length+' pesos?','🗑️',()=>{pesosRegistrados=[];renderPesos();showToast('🗑 Lista limpa');});
-}
-function renderPesos(){
-  const total=pesosRegistrados.length;
-  document.getElementById('pesoCount').textContent=total+' reg.';
-  const lista=document.getElementById('pesoLista');lista.innerHTML='';
-  if(total===0){lista.innerHTML=`<div class="peso-empty"><div style="font-size:40px;opacity:.5">⚖️</div><div style="font-size:13px;margin-top:10px;font-weight:500;">Nenhum peso registrado ainda.</div></div>`;return;}
-  const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
-  const resumo=document.createElement('div');
-  resumo.style.cssText='background:var(--green-bg);border:1px solid var(--green-bd);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;';
-  resumo.innerHTML=`<span style="font-size:20px">⚖️</span><div><div style="font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">TOTAL ACUMULADO</div><div style="font-family:var(--disp);font-size:22px;font-weight:900;color:var(--green);">${totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div></div>`;
-  lista.appendChild(resumo);
-  pesosRegistrados.forEach(p=>{
-    const el=document.createElement('div');el.className='peso-item';
-    el.innerHTML=`
-      <div class="peso-item-icon">📦</div>
-      <div class="peso-item-info">
-        <div class="peso-item-val">${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:3})} ${p.unit}</div>
-        <div class="peso-item-meta">${p.hora}${p.obs?' · '+p.obs:''}${p.validade?' · Val: '+p.validade:''}${p.bruto?' · Bruto: '+p.bruto.toLocaleString('pt-BR',{minimumFractionDigits:3})+'kg':''}</div>
-      </div>
-      <button class="btn-del-peso" onclick="removerPeso(${p.id})">✕</button>`;
-    lista.appendChild(el);
-  });
-}
-
-/* ── PDF Pesos ── */
-async function gerarPDFPeso(){
-  if(pesosRegistrados.length===0){showToast('❌ Nenhum peso registrado');return;}
-  showToast('⏳ Gerando PDF...');
-  try{
-    const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const now=new Date();const ds=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    doc.setFillColor(34,197,94);doc.rect(0,0,210,22,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
-    doc.text('VIGIL · PESAGEM DE CAIXAS',14,10);
-    doc.setFontSize(7);doc.setFont(undefined,'normal');
-    doc.text('Gerado: '+ds+'  |  Operador: '+(currentUser||'—'),14,16);
-    const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
-    doc.setFillColor(240,255,245);doc.rect(0,22,210,9,'F');
-    doc.setTextColor(22,101,52);doc.setFontSize(7);doc.setFont(undefined,'bold');
-    doc.text(`Total registros: ${pesosRegistrados.length}   Total líquido: ${totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg`,14,28);
-    doc.autoTable({
-      startY:33,
-      head:[['#','Hora','Produto','Peso Líq.','Peso Bruto','Validade']],
-      body:pesosRegistrados.map((p,i)=>[i+1,p.hora,p.obs||'—',p.valor.toLocaleString('pt-BR',{minimumFractionDigits:3})+' '+p.unit,p.bruto?p.bruto.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg':'—',p.validade||'—']),
-      foot:[['','','Total:',totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg','','']],
-      headStyles:{fillColor:[34,197,94],textColor:255,fontStyle:'bold',fontSize:8},
-      bodyStyles:{fontSize:8},alternateRowStyles:{fillColor:[240,255,245]},
-      footStyles:{fillColor:[22,101,52],textColor:255,fontStyle:'bold',fontSize:8},
-      columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:20,halign:'center'},2:{cellWidth:70},3:{cellWidth:28,halign:'right'},4:{cellWidth:28,halign:'right'},5:{cellWidth:24,halign:'center'}},
-      margin:{left:14,right:14},theme:'grid'
-    });
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,196,290,{align:'right'});}
-    lastPesoPdfBlob=doc.output('blob');
-    const a=document.createElement('a');a.href=URL.createObjectURL(lastPesoPdfBlob);
-    a.download='pesagem-'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf';a.click();
-    showToast('✅ PDF gerado!');
-  }catch(e){showToast('❌ Erro: '+e.message);}
-}
-function abrirWAPeso(){if(pesosRegistrados.length===0){showToast('❌ Nenhum peso registrado');return;}document.getElementById('waTxtPeso').value='';document.getElementById('modalWAPeso').classList.add('open');}
-async function enviarWAPeso(){
-  const msg=document.getElementById('waTxtPeso').value.trim()||'Pesagem de caixas realizada. Segue relatório ⚖️';
-  bgClose('modalWAPeso');
-  if(!lastPesoPdfBlob)await gerarPDFPeso();
-  if(lastPesoPdfBlob&&navigator.canShare){const file=new File([lastPesoPdfBlob],'pesagem.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
-  const totalKg=pesosRegistrados.reduce((s,p)=>{let v=p.valor;if(p.unit==='g')v/=1000;return s+v;},0);
-  const linhas=pesosRegistrados.slice(0,15).map((p,i)=>`${i+1}. ${p.obs||'Caixa '+(i+1)} — ${p.valor}${p.unit}${p.validade?' Val:'+p.validade:''} (${p.hora})`).join('\n');
-  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n⚖️ PESAGEM DE CAIXAS\n📦 Registros: '+pesosRegistrados.length+'\n📊 Total: '+totalKg.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg\n\n'+linhas+'\n\n_PDF salvo — anexe pelo clipe 📎_');
-  window.location.href=url;showToast('💬 Abrindo WhatsApp...');
-}
-renderPesos();
-
-/* ── SERVICE WORKER ── */
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));
-  });
-}
-
-renderTriagem();
-</script>
-</body>
-</html>
+  const vistos=new Set();return todoItens.filter(it=>{const key=it.endereco+'|'+it.c
  
