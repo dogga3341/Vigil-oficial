@@ -1042,25 +1042,27 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
         <input class="tri-inp" id="cpCaixasPorPalete" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 40" oninput="atualizarCalculoCP()">
       </div>
 
+      <!-- Lançar palete: um por um. Cheio = 1 toque. Incompleto = digita a qtd real -->
       <div class="tri-field">
-        <label class="tri-field-label">Paletes Completos <span style="color:var(--muted);font-size:10px;">(cheios, com o padrão)</span></label>
-        <input class="tri-inp" id="cpQtdPaletes" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 3" oninput="atualizarCalculoCP()">
-      </div>
-
-      <!-- Paletes incompletos: vem com menos caixas que o padrão -->
-      <div class="tri-field">
-        <label class="tri-field-label">Palete Incompleto <span style="color:var(--muted);font-size:10px;">(quantas caixas tem esse palete)</span></label>
-        <div style="display:flex;gap:8px;">
-          <input class="tri-inp" id="cpIncompletoInput" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex: 27" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarIncompletoCP();}">
-          <button style="width:auto;padding:0 22px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--accent2));color:#fff;font-size:15px;font-weight:800;font-family:var(--sans);cursor:pointer;box-shadow:0 4px 16px rgba(77,158,255,.25);" onclick="adicionarIncompletoCP()">+ Add</button>
+        <label class="tri-field-label">Lançar Palete</label>
+        <button style="width:100%;padding:16px;border:none;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--accent2));color:#fff;font-size:15px;font-weight:800;font-family:var(--sans);cursor:pointer;box-shadow:0 4px 20px rgba(77,158,255,.25);margin-bottom:8px;" onclick="adicionarPaleteCheioCP()">✓ Palete Cheio</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+          <span style="color:var(--muted);font-size:11px;font-family:var(--mono);">OU, SE VEIO INCOMPLETO</span>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input class="tri-inp" id="cpPaleteInput" type="number" inputmode="numeric" min="0" step="1" placeholder="Quantas caixas tem?" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPaleteIncompletoCP();}">
+          <button style="width:auto;padding:0 22px;border:1.5px solid var(--border2);border-radius:11px;background:var(--surf2);color:var(--text);font-size:14px;font-weight:800;font-family:var(--sans);cursor:pointer;" onclick="adicionarPaleteIncompletoCP()">+ Add</button>
         </div>
       </div>
 
-      <div class="peso-list-header" style="margin-top:10px;">
-        <div class="peso-list-title">Paletes incompletos lançados</div>
-        <button class="btn-clear-peso" onclick="limparIncompletosCP()">🗑 Limpar</button>
+      <!-- Lista única de paletes lançados -->
+      <div class="peso-list-header" style="margin-top:14px;">
+        <div class="peso-list-title">Paletes lançados</div>
+        <button class="btn-clear-peso" onclick="limparPaletesCP()">🗑 Limpar</button>
       </div>
-      <div id="cpListaIncompletos"></div>
+      <div id="cpListaPaletes"></div>
 
       <div class="tri-field" style="margin-top:18px;">
         <label class="tri-field-label">Quantidade de Caixas Esperada <span style="color:var(--muted);font-size:10px;">(conforme NF, opcional)</span></label>
@@ -1074,8 +1076,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
       <!-- Card de cálculo automático -->
       <div class="flv-calc-card" style="margin-top:18px;">
-        <div class="flv-calc-row"><span>Paletes Completos</span><b id="cpCalcConta">0 × 0</b></div>
-        <div class="flv-calc-row" id="cpCalcIncRow" style="display:none;"><span>Paletes Incompletos</span><b id="cpCalcInc">0 pal. · 0 cx</b></div>
+        <div class="flv-calc-row"><span>Paletes Lançados</span><b id="cpCalcConta">0</b></div>
         <div class="flv-calc-row"><span>Total de Caixas</span><b id="cpCalcCaixas">0</b></div>
         <div class="flv-calc-row"><span>Peso Recebido</span><b id="cpCalcTotal">0,000 kg</b></div>
         <div class="flv-calc-row"><span>Peso Retirado (<span id="cpCalcPct">0</span>%)</span><b id="cpCalcRetirado" style="color:var(--red)">0,000 kg</b></div>
@@ -1520,8 +1521,4 @@ async function extrairItensPDF(file){
       const mDep=linha.match(/^(\d{4})\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(.+?)\s+(\d+x\d+)\s+(\d{2}\/\d{2}\/\d{2,4})\s+(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)\s+(\w+)$/);
       if(mDep){const vp=mDep[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];todoItens.push({id:todoItens.length,deposito:mDep[1],endereco:mDep[2],codigo:mDep[3],descricao:mDep[4].trim(),norma:mDep[5],validade:vp.join('/'),nrPalete:mDep[7],dtaEntr:mDep[8]||'',embalagem:mDep[9],unidade:mDep[10],status:mDep[11],confirmado:false});return;}
       const mFallback=linha.match(/(\d{4})\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(.+?)\s+(\d+x\d+)\s+(\d{2}\/\d{2}\/\d{2,4})/);
-      if(mFallback){const vp=mFallback[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];const resto=linha.slice(mFallback[0].length).trim();const mResto=resto.match(/(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)/);todoItens.push({id:todoItens.length,deposito:mFallback[1],endereco:mFallback[2],codigo:mFallback[3],descricao:mFallback[4].trim(),norma:mFallback[5],validade:vp.join('/'),nrPalete:mResto?mResto[1]:'',dtaEntr:mResto&&mResto[2]?mResto[2]:'',embalagem:mResto?mResto[3]:'',unidade:mResto?mResto[4]:'',status:'Alocado',confirmado:false});}
-    });
-  }
-  const vistos=new Set();return todoItens.filter(it=>{const key=it.endereco+'|'+it.c
- 
+      if(mFallback){const vp=mFallback[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];const resto=linha.slice(mFallback[0].length).trim();const mResto=resto.match(/(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)/);todoItens.push({id:todoItens.length,deposito:mFallback[1],endereco:mFallback[2],codigo:mFallback[3],descricao:mFallback[4].trim(),norma:mFallback[5],validade:vp.join('/'),nrPalete:mResto?mResto[1]:'',dtaEntr:mResto&&mResto[2]?mResto[2]:'',embalagem:mResto?mResto[3]:'',unidade:mResto?mResto[4]:'',status:'
