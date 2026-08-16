@@ -1521,4 +1521,1085 @@ async function extrairItensPDF(file){
       const mDep=linha.match(/^(\d{4})\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(.+?)\s+(\d+x\d+)\s+(\d{2}\/\d{2}\/\d{2,4})\s+(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)\s+(\w+)$/);
       if(mDep){const vp=mDep[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];todoItens.push({id:todoItens.length,deposito:mDep[1],endereco:mDep[2],codigo:mDep[3],descricao:mDep[4].trim(),norma:mDep[5],validade:vp.join('/'),nrPalete:mDep[7],dtaEntr:mDep[8]||'',embalagem:mDep[9],unidade:mDep[10],status:mDep[11],confirmado:false});return;}
       const mFallback=linha.match(/(\d{4})\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(.+?)\s+(\d+x\d+)\s+(\d{2}\/\d{2}\/\d{2,4})/);
-      if(mFallback){const vp=mFallback[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];const resto=linha.slice(mFallback[0].length).trim();const mResto=resto.match(/(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)/);todoItens.push({id:todoItens.length,deposito:mFallback[1],endereco:mFallback[2],codigo:mFallback[3],descricao:mFallback[4].trim(),norma:mFallback[5],validade:vp.join('/'),nrPalete:mResto?mResto[1]:'',dtaEntr:mResto&&mResto[2]?mResto[2]:'',embalagem:mResto?mResto[3]:'',unidade:mResto?mResto[4]:'',status:'
+      if(mFallback){const vp=mFallback[6].split('/');if(vp[2].length===2)vp[2]='20'+vp[2];const resto=linha.slice(mFallback[0].length).trim();const mResto=resto.match(/(\S+)\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?([0-9.,]+)\s+([0-9.,]+)/);todoItens.push({id:todoItens.length,deposito:mFallback[1],endereco:mFallback[2],codigo:mFallback[3],descricao:mFallback[4].trim(),norma:mFallback[5],validade:vp.join('/'),nrPalete:mResto?mResto[1]:'',dtaEntr:mResto&&mResto[2]?mResto[2]:'',embalagem:mResto?mResto[3]:'',unidade:mResto?mResto[4]:'',status:'Alocado',confirmado:false});}
+    });
+  }
+  const vistos=new Set();return todoItens.filter(it=>{const key=it.endereco+'|'+it.codigo;if(vistos.has(key))return false;vistos.add(key);return true;});
+}
+
+/* ── AUDITORIA ── */
+function filtrar(){const q=(document.getElementById('searchInp').value||'').toLowerCase();filtrados=q?enderecos.filter(e=>e.endereco.toLowerCase().includes(q)||e.codigo.toLowerCase().includes(q)||e.descricao.toLowerCase().includes(q)):[...enderecos];renderCards();}
+function renderLista(){atualizarProgresso();filtrados=[...enderecos];renderCards();}
+function atualizarProgresso(){const done=enderecos.filter(e=>e.confirmado).length,total=enderecos.length,pct=total?Math.round(done/total*100):0;document.getElementById('topProg').textContent=`${done}/${total}`;document.getElementById('progPct').textContent=pct+'%';document.getElementById('progFill').style.width=pct+'%';}
+function renderCards(){
+  const lista=document.getElementById('listaEnd');lista.innerHTML='';
+  const done=enderecos.filter(e=>e.confirmado).length;
+  const banner=document.createElement('div');banner.className='all-done-banner'+(done===enderecos.length&&enderecos.length>0?' show':'');
+  banner.innerHTML=`<span style="font-size:24px">🎉</span><p><b>Auditoria concluída!</b><br>Todos os endereços conferidos. Gere o PDF.</p>`;lista.appendChild(banner);
+  filtrados.forEach(en=>{
+    const st=en.confirmado?{cls:'done',label:'✓ Conferido'}:getStatus(en.validade);
+    const card=document.createElement('div');card.className='end-card'+(en.confirmado?' done':'');
+    card.innerHTML=`<div class="end-row"><div class="end-icon">${en.confirmado?'✅':'📍'}</div><div class="end-info"><div class="end-addr">${en.endereco}</div><div class="end-prod">${en.descricao}</div><div class="end-meta">${en.codigo} · ${en.norma} · ${en.validade||'—'}</div></div><span class="end-badge ${st.cls}">${st.label}</span><span class="end-arrow">›</span></div>`;
+    card.onclick=()=>abrirDetalhe(en.id);lista.appendChild(card);
+  });
+}
+function checkAllDone(){const done=enderecos.filter(e=>e.confirmado).length;if(done===enderecos.length&&enderecos.length>0){document.getElementById('bottomBar').classList.add('show');document.getElementById('btnWa').disabled=false;}}
+function abrirDetalhe(id){currentIdx=enderecos.findIndex(e=>e.id===id);renderDetalhe();showScreen('sc-detalhe');}
+function voltarLista(){atualizarProgresso();filtrar();checkAllDone();showScreen('sc-enderecos');}
+function renderDetalhe(){
+  const en=enderecos[currentIdx];const st=getStatus(en.validade);const pos=`${currentIdx+1}/${enderecos.length}`;
+  document.getElementById('detPos').textContent=pos;
+  const temAnt=currentIdx>0,temProx=currentIdx<enderecos.length-1;
+  document.getElementById('detConteudo').innerHTML=`
+  <div style="padding:14px 14px 120px">
+    <div class="det-addr-tag"><span style="font-size:22px">📍</span><div><div class="addr-text">${en.endereco}</div><div class="addr-sub">Depósito ${en.deposito} · ${pos}</div></div></div>
+    <div class="info-block ${en.confirmado?'done':''}">
+      <div class="info-row"><span class="info-label">Código</span><span class="info-val mono">${en.codigo}</span></div>
+      <div class="info-row"><span class="info-label">Descrição</span><span class="info-val" style="font-size:12px;line-height:1.5">${en.descricao}</span></div>
+      <div class="info-row"><span class="info-label">Norma</span><span class="info-val mono">${en.norma||'—'}</span></div>
+      <div class="info-row"><span class="info-label">Embalagem</span><span class="info-val mono">${en.embalagem||'—'}</span></div>
+      <div class="info-row"><span class="info-label">Unidade</span><span class="info-val mono">${en.unidade||'—'}</span></div>
+      ${en.dtaEntr?`<div class="info-row"><span class="info-label">Dt. Entrada</span><span class="info-val mono">${en.dtaEntr}</span></div>`:''}
+      ${en.nrPalete?`<div class="info-row"><span class="info-label">Nr. Palete</span><span class="info-val mono">${en.nrPalete}</span></div>`:''}
+    </div>
+    <div class="info-block ${en.confirmado?'done':''}">
+      <div class="val-row">
+        <div class="val-dot ${en.confirmado?'ok':st.cls}"></div>
+        <span class="val-label">Validade</span>
+        <div style="flex:1"><div class="val-data-big">${en.validade||'—'}</div><div class="val-status-txt">${en.confirmado?'✓ Confirmada':st.label}</div></div>
+        <button class="btn-edit" onclick="abrirEditar()">${en.confirmado?'✏ Corrigir':'✏ Editar'}</button>
+      </div>
+    </div>
+    ${en.confirmado?`<div class="done-check"><span style="font-size:20px">✅</span> Validade confirmada e registrada</div>`:''}
+    <div class="nav-btns">
+      <button class="btn-nav" onclick="navegar(-1)" ${!temAnt?'disabled':''}>← Anterior</button>
+      ${temProx?`<button class="btn-nav primary" onclick="navegar(1)">Próximo →</button>`:`<button class="btn-nav primary" onclick="voltarLista()">Ver lista ✓</button>`}
+    </div>
+  </div>`;
+}
+function navegar(dir){currentIdx=Math.max(0,Math.min(enderecos.length-1,currentIdx+dir));renderDetalhe();}
+function abrirEditar(){
+  const en=enderecos[currentIdx];document.getElementById('editSub').textContent=en.endereco+' · '+en.descricao;
+  document.getElementById('dateInp').value=en.validade||'';document.getElementById('modalEdit').classList.add('open');
+  setTimeout(()=>document.getElementById('dateInp').focus(),250);
+}
+function pedirConf(){
+  const val=document.getElementById('dateInp').value.trim();
+  if(val&&!isValidDate(val)){showToast('❌ Data inválida! Use DD/MM/AAAA');return;}
+  pendingVal=val;bgClose('modalEdit');
+  const en=enderecos[currentIdx];
+  document.getElementById('confMsg').textContent=`Alterar validade de "${en.descricao.slice(0,40)}" para:`;
+  document.getElementById('confVal').textContent=val||'(sem data)';document.getElementById('modalConf').classList.add('open');
+}
+function confirmarAlteracao(){
+  enderecos[currentIdx].validade=pendingVal||null;enderecos[currentIdx].confirmado=true;
+  bgClose('modalConf');showToast('✅ Validade confirmada!');renderDetalhe();atualizarProgresso();filtrar();checkAllDone();
+}
+
+/* ── GERAR PDF AUDITORIA ── */
+async function gerarPDF(){
+  showToast('⏳ Gerando PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const now=new Date();
+    const ds=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    doc.setFillColor(77,158,255);doc.rect(0,0,297,22,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');
+    doc.text('VIGIL · AUDITORIA WMS · RELATÓRIO DE VALIDADES',14,10);doc.setFontSize(7);doc.setFont(undefined,'normal');
+    doc.text('Arquivo: '+pdfFileName+'  |  Operador: '+(window.currentUser||'—'),14,16);doc.text('Gerado: '+ds,200,16);
+    const conf=enderecos.filter(e=>e.confirmado).length;
+    doc.setFillColor(245,248,255);doc.rect(0,22,297,9,'F');doc.setTextColor(30,58,138);doc.setFontSize(7);doc.setFont(undefined,'bold');
+    doc.text(`Total: ${enderecos.length}   Conferidos: ${conf}   Pendentes: ${enderecos.length-conf}`,14,28);
+    doc.autoTable({
+      startY:33,head:[['Endereço','Código','Descrição','Norma','Validade','Embalagem','Unidade','Dt.Entrada','Status']],
+      body:enderecos.map(en=>{const st=en.confirmado?{label:'✓ Conferido'}:getStatus(en.validade);return[en.endereco,en.codigo,en.descricao,en.norma||'—',en.validade||'—',en.embalagem||'—',en.unidade||'—',en.dtaEntr||'—',st.label];}),
+      headStyles:{fillColor:[77,158,255],textColor:255,fontStyle:'bold',fontSize:6},bodyStyles:{fontSize:6},alternateRowStyles:{fillColor:[248,250,252]},
+      columnStyles:{0:{cellWidth:28},1:{cellWidth:18},2:{cellWidth:70},3:{cellWidth:14,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:16,halign:'center'},6:{cellWidth:16,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:26,halign:'center'}},
+      margin:{left:14,right:14},theme:'grid'
+    });
+    const pages=doc.internal.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(160);doc.text(`Pág ${i}/${pages}`,283,205,{align:'right'});}
+    lastPdfBlob=doc.output('blob');const a=document.createElement('a');a.href=URL.createObjectURL(lastPdfBlob);
+    a.download='auditoria-wms-'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf';a.click();showToast('✅ PDF gerado!');
+  }catch(e){showToast('❌ Erro: '+e.message);console.error(e);}
+}
+
+/* ── WHATSAPP ── */
+function abrirWA(){if(!lastPdfBlob){gerarPDF().then(()=>setTimeout(()=>document.getElementById('modalWA').classList.add('open'),1000));return;}document.getElementById('waTxt').value='';document.getElementById('modalWA').classList.add('open');}
+async function enviarWA(){
+  const msg=document.getElementById('waTxt').value.trim()||'Auditoria WMS concluída. Segue relatório 📦';bgClose('modalWA');
+  if(lastPdfBlob&&navigator.canShare){const file=new File([lastPdfBlob],'auditoria-wms.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
+  const conf=enderecos.filter(e=>e.confirmado).length;
+  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n📊 Auditoria WMS\n✅ Conferidos: '+conf+'\n📦 Total: '+enderecos.length+'\n\n_PDF salvo — anexe pelo clipe 📎_');
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+function abrirWATriagem(){if(triagemItens.length===0){showToast('❌ Nenhum item registrado');return;}document.getElementById('waTxtTri').value='';document.getElementById('modalWATri').classList.add('open');}
+async function enviarWATriagem(){
+  const msg=document.getElementById('waTxtTri').value.trim()||'Triagem de produtos realizada. Segue relatório 📦';bgClose('modalWATri');
+  if(!lastTriPdfBlob)await gerarPDFTriagem();
+  if(lastTriPdfBlob&&navigator.canShare){const file=new File([lastTriPdfBlob],'triagem.pdf',{type:'application/pdf'});if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:msg});showToast('✅ Compartilhado!');return;}catch(e){}}}
+  const ava=triagemItens.filter(i=>i.avariado).length;
+  const linhas=triagemItens.slice(0,15).map((it,i)=>`${i+1}. ${it.descricao||'EAN:'+it.ean}${it.codigo?' ['+it.codigo+']':''} — ${getQtyText(it)}${it.validade?' Venc:'+it.validade:''}${it.avariado?' ⚠️AVARIADO'+(it.avaQtd?' ('+it.avaQtd+it.avaUnit+')':''):''}`).join('\n');
+  const extra=triagemItens.length>15?`\n...e mais ${triagemItens.length-15} itens`:'';
+  const url='https://wa.me/?text='+encodeURIComponent(msg+'\n\n🔍 TRIAGEM DE PRODUTOS\n📦 Total: '+triagemItens.length+'\n✅ Conformes: '+(triagemItens.length-ava)+'\n⚠️ Avariados: '+ava+'\n\n'+linhas+extra+'\n\n_PDF salvo — anexe pelo clipe 📎_');
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+
+/* ── UTILS ── */
+function maskDate(v){let n=v.replace(/\D/g,'');if(n.length>=3)n=n.slice(0,2)+'/'+n.slice(2);if(n.length>=6)n=n.slice(0,5)+'/'+n.slice(5,9);return n;}
+function isValidDate(s){const p=s.split('/');if(p.length!==3||p[2].length!==4)return false;const d=new Date(+p[2],+p[1]-1,+p[0]);return!isNaN(d)&&d.getDate()===+p[0];}
+function bgClose(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
+
+/* ── MODAL CONFIRM CUSTOMIZADO (substitui confirm() nativo) ── */
+let _confirmCb=null;
+function mostrarConfirm(msg,icone,cb){
+  _confirmCb=cb;
+  document.getElementById('apkConfMsg').textContent=msg;
+  document.getElementById('apkConfIcon').textContent=icone||'❓';
+  document.getElementById('modalApkConf').classList.add('open');
+}
+function apkConfSim(){bgClose('modalApkConf');if(_confirmCb)_confirmCb();}
+function apkConfNao(){bgClose('modalApkConf');_confirmCb=null;}
+
+function resetApp(){
+  mostrarConfirm('Voltar ao início?','🏠',()=>{
+    enderecos=[];filtrados=[];currentIdx=null;lastPdfBlob=null;pdfFileName='';
+    document.getElementById('bottomBar').classList.remove('show');
+    document.getElementById('searchInp').value='';
+    showScreen('sc-upload');
+  });
+}
+
+/* ── SCANNER DE EAN — BarcodeDetector nativo + fallback foto ── */
+let scanStream=null, scannerAtivo=false, scanAnimFrame=null, usarFrontal=false;
+
+async function abrirScanner(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    showToast('❌ Câmera indisponível neste navegador — use 📷 Foto');
+    usarFallbackCamera();
+    return;
+  }
+
+  document.getElementById('scanOverlay').classList.add('open');
+  document.getElementById('scanHint').textContent='Iniciando câmera...';
+
+  // Tenta abrir câmera
+  try{
+    const constraints={video:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}};
+    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
+    const video=document.getElementById('scanVideo');
+    video.srcObject=scanStream;
+    await video.play();
+  }catch(e){
+    fecharScanner();
+    showToast('❌ Câmera bloqueada — use o botão 📷 Foto');
+    usarFallbackCamera();
+    return;
+  }
+
+  // Tenta BarcodeDetector nativo (mais confiável no APK)
+  if('BarcodeDetector' in window){
+    document.getElementById('scanHint').textContent='Aponte para o código de barras';
+    iniciarBarcodeDetector();
+    return;
+  }
+
+  // Fallback: QuaggaJS no video element
+  document.getElementById('scanHint').textContent='Aponte para o código (QuaggaJS)';
+  iniciarQuagga();
+}
+
+/* ── BarcodeDetector nativo (Chrome/APK) ── */
+function iniciarBarcodeDetector(){
+  const video=document.getElementById('scanVideo');
+  const detector=new BarcodeDetector({
+    formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']
+  });
+  scannerAtivo=true;
+
+  async function loop(){
+    if(!scannerAtivo)return;
+    try{
+      if(video.readyState>=2){
+        const codes=await detector.detect(video);
+        if(codes&&codes.length>0){
+          const code=codes[0].rawValue;
+          if(/\d/.test(code)){
+            scannerAtivo=false;
+            if(navigator.vibrate)navigator.vibrate([80,40,80]);
+            const flash=document.getElementById('scanFlash');
+            flash.classList.add('flash');
+            setTimeout(()=>flash.classList.remove('flash'),200);
+            document.getElementById('triEan').value=code;
+            setTimeout(()=>{
+              fecharScanner();
+              showToast('✅ EAN: '+code);
+              document.getElementById('triCodigo').focus();
+            },300);
+            return;
+          }
+        }
+      }
+    }catch(e){}
+    scanAnimFrame=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ── QuaggaJS fallback (navegador sem BarcodeDetector) ── */
+function iniciarQuagga(){
+  if(typeof Quagga==='undefined'){usarFallbackCamera();return;}
+  const vp=document.getElementById('scanViewport');
+  vp.style.display='block';
+  Quagga.init({
+    inputStream:{type:'LiveStream',target:vp,
+      constraints:{facingMode:usarFrontal?'user':'environment',width:{ideal:1280},height:{ideal:720}}},
+    locator:{patchSize:'medium',halfSample:true},
+    numOfWorkers:0,
+    decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+    locate:true,
+  },err=>{
+    if(err){showToast('❌ Quagga: '+err.message);fecharScanner();return;}
+    Quagga.start();
+    scannerAtivo=true;
+  });
+  Quagga.offDetected();
+  Quagga.onDetected(data=>{
+    const code=data.codeResult.code;
+    if(!/^\d+$/.test(code))return;
+    if(navigator.vibrate)navigator.vibrate([80,40,80]);
+    const flash=document.getElementById('scanFlash');
+    flash.classList.add('flash');
+    setTimeout(()=>flash.classList.remove('flash'),200);
+    document.getElementById('triEan').value=code;
+    setTimeout(()=>{fecharScanner();showToast('✅ EAN: '+code);document.getElementById('triCodigo').focus();},350);
+  });
+}
+
+/* ── Fallback: tira foto e lê o código ── */
+function usarFallbackCamera(){
+  fecharScanner();
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.setAttribute('capture','environment');
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=async()=>{
+    const file=inp.files[0];
+    document.body.removeChild(inp);
+    if(!file){showToast('❌ Nenhuma foto');return;}
+    showToast('🔍 Lendo código...');
+
+    // Tenta BarcodeDetector na imagem
+    if('BarcodeDetector' in window){
+      try{
+        const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar']});
+        const img=await createImageBitmap(file);
+        const codes=await bd.detect(img);
+        if(codes.length>0){
+          const code=codes[0].rawValue;
+          document.getElementById('triEan').value=code;
+          showToast('✅ EAN: '+code);
+          if(navigator.vibrate)navigator.vibrate([80,40,80]);
+          document.getElementById('triCodigo').focus();
+          return;
+        }
+        showToast('❌ Código não encontrado. Tente mais perto.');return;
+      }catch(e){}
+    }
+
+    // Tenta Quagga decodeSingle
+    if(typeof Quagga!=='undefined'){
+      const url=URL.createObjectURL(file);
+      Quagga.decodeSingle({
+        decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+        locate:true,src:url
+      },result=>{
+        URL.revokeObjectURL(url);
+        if(result&&result.codeResult){
+          document.getElementById('triEan').value=result.codeResult.code;
+          showToast('✅ EAN: '+result.codeResult.code);
+          document.getElementById('triCodigo').focus();
+        }else{
+          showToast('❌ Não leu. Tente digitar o código.');
+        }
+      });
+    }else{
+      showToast('❌ Leitor indisponível. Digite o código manualmente.');
+    }
+  };
+  inp.click();
+}
+
+function trocarCamera(){
+  usarFrontal=!usarFrontal;
+  fecharScanner();
+  setTimeout(abrirScanner,300);
+  showToast(usarFrontal?'📷 Câmera frontal':'📷 Câmera traseira');
+}
+
+function fecharScanner(){
+  scannerAtivo=false;
+  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  const video=document.getElementById('scanVideo');
+  if(video){video.srcObject=null;}
+  if(typeof Quagga!=='undefined'){try{Quagga.stop();}catch(e){}}
+  const vp=document.getElementById('scanViewport');
+  if(vp){vp.innerHTML='';vp.style.display='none';}
+  document.getElementById('scanOverlay').classList.remove('open');
+}
+
+
+/* ══════════════════════════════════════════
+   RECEBIMENTO FLV — pesagem de paletes + quebra
+   ══════════════════════════════════════════ */
+/* ── Sessões (abas) — permite conferir vários fornecedores ao mesmo tempo,
+   alternando entre eles sem perder o progresso de nenhum ── */
+let flvSessoes=[];        // [{id,fornecedor,fruta,qtdPaletes,percentual,pesos:[]}, ...]
+let flvSessaoAtivaId=null;
+let flvPesos=[];          // referência (mesmo array) aos pesos da sessão ativa
+let flvUltimoResumo=null; // snapshot usado ao gerar a mensagem final
+
+function sessaoAtivaFlv(){return flvSessoes.find(s=>s.id===flvSessaoAtivaId);}
+
+function abrirFlv(){
+  showScreen('sc-flv');
+  if(flvSessoes.length===0){
+    novaSessaoFlv();
+  }else{
+    carregarSessaoFlv(flvSessaoAtivaId);
+  }
+}
+
+function novaSessaoFlv(){
+  const id='s'+Date.now()+Math.random().toString(36).slice(2,6);
+  flvSessoes.push({id,fornecedor:'',fruta:'',qtdPaletes:'',percentual:'',pesos:[]});
+  carregarSessaoFlv(id);
+}
+
+function carregarSessaoFlv(id){
+  const s=flvSessoes.find(x=>x.id===id);
+  if(!s)return;
+  flvSessaoAtivaId=id;
+  flvPesos=s.pesos; // mesma referência: qualquer alteração já reflete direto na sessão
+  document.getElementById('flvFornecedor').value=s.fornecedor;
+  document.getElementById('flvFruta').value=s.fruta;
+  document.getElementById('flvQtdPaletes').value=s.qtdPaletes;
+  document.getElementById('flvPercentual').value=s.percentual;
+  document.getElementById('flvPesoInput').value='';
+  renderFlvPesos();
+}
+
+/* Salva o valor de um campo de texto/numero direto na sessão ativa (chamado nos oninput) */
+function salvarCampoSessaoFlv(campo,valor){
+  const s=sessaoAtivaFlv();
+  if(s)s[campo]=valor;
+  renderAbasFlv();
+}
+
+/* Fecha uma aba (com confirmação se tiver dados não confirmados) */
+function fecharSessaoFlv(id,ev){
+  if(ev)ev.stopPropagation();
+  const s=flvSessoes.find(x=>x.id===id);
+  if(!s)return;
+  const temDados=s.pesos.length>0||s.fornecedor.trim()||s.fruta.trim();
+  const doFechamento=()=>{
+    flvSessoes=flvSessoes.filter(x=>x.id!==id);
+    if(flvSessoes.length===0){novaSessaoFlv();}
+    else if(flvSessaoAtivaId===id){carregarSessaoFlv(flvSessoes[0].id);}
+    else{renderAbasFlv();}
+  };
+  if(temDados){
+    mostrarConfirm('Fechar esta aba? Os dados não confirmados serão perdidos.','⚠️',doFechamento);
+  }else{
+    doFechamento();
+  }
+}
+
+/* Encerra a aba atual sem perguntar (usado após confirmar/enviar um recebimento) e
+   pula automaticamente para o próximo fornecedor pendente */
+function encerrarSessaoAtualFlv(){
+  const idAtual=flvSessaoAtivaId;
+  flvSessoes=flvSessoes.filter(x=>x.id!==idAtual);
+  if(flvSessoes.length===0){novaSessaoFlv();}
+  else{carregarSessaoFlv(flvSessoes[0].id);}
+}
+
+/* Desenha as abas dos fornecedores no topo da tela */
+function renderAbasFlv(){
+  const cont=document.getElementById('flvAbas');
+  if(!cont)return;
+  cont.innerHTML='';
+  flvSessoes.forEach(s=>{
+    const nome=s.fruta.trim()||'Novo';
+    const ativa=s.id===flvSessaoAtivaId;
+    const chip=document.createElement('div');
+    chip.className='flv-aba'+(ativa?' ativa':'');
+    chip.onclick=()=>{if(!ativa)carregarSessaoFlv(s.id);};
+    chip.innerHTML=`<span>${nome}</span>${s.pesos.length>0?`<b class="flv-aba-badge">${s.pesos.length}</b>`:''}<button class="flv-aba-x" onclick="fecharSessaoFlv('${s.id}',event)">✕</button>`;
+    cont.appendChild(chip);
+  });
+  const btnNova=document.createElement('button');
+  btnNova.className='flv-aba flv-aba-add';
+  btnNova.textContent='+';
+  btnNova.title='Novo fornecedor';
+  btnNova.onclick=()=>novaSessaoFlv();
+  cont.appendChild(btnNova);
+}
+
+function voltarHomeFlv(){
+  // Nada se perde ao sair — as abas continuam salvas na memória do app até serem
+  // fechadas ou confirmadas, então dá pra voltar e retomar de onde parou.
+  showScreen('sc-upload');
+}
+
+/* Adiciona um peso de palete à lista */
+function adicionarPesoPalete(){
+  const inp=document.getElementById('flvPesoInput');
+  const raw=inp.value.trim().replace(',','.');
+  const valor=parseFloat(raw);
+  if(!raw||isNaN(valor)||valor<=0){
+    showToast('❌ Informe um peso válido');
+    inp.focus();
+    return;
+  }
+  flvPesos.push(valor);
+  inp.value='';
+  inp.focus();
+  if(navigator.vibrate)navigator.vibrate(30);
+  renderFlvPesos();
+  renderAbasFlv();
+}
+
+function removerPesoFlv(idx){
+  flvPesos.splice(idx,1);
+  renderFlvPesos();
+  renderAbasFlv();
+}
+
+function limparPesosFlv(){
+  if(flvPesos.length===0)return;
+  mostrarConfirm('Limpar todos os '+flvPesos.length+' pesos lançados?','🗑️',()=>{
+    flvPesos.length=0;renderFlvPesos();renderAbasFlv();showToast('🗑 Lista limpa');
+  });
+}
+
+/* Renderiza a lista de pesos + atualiza o contador de paletes pesados
+   (conferência com a quantidade informada é opcional, feita a qualquer momento) */
+function renderFlvPesos(){
+  const lista=document.getElementById('flvListaPesos');
+  lista.innerHTML='';
+  if(flvPesos.length===0){
+    lista.innerHTML=`<div class="peso-empty"><div style="font-size:36px;opacity:.5">🥬</div><div style="font-size:13px;margin-top:8px;font-weight:500;">Nenhum peso lançado ainda.</div></div>`;
+  }else{
+    flvPesos.forEach((v,i)=>{
+      const el=document.createElement('div');
+      el.className='flv-pallet-item';
+      el.innerHTML=`
+        <div class="flv-pallet-num">${i+1}</div>
+        <div class="flv-pallet-val">${v.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</div>
+        <button class="btn-del-peso" onclick="removerPesoFlv(${i})">✕</button>`;
+      lista.appendChild(el);
+    });
+  }
+  renderAbasFlv();
+
+  const qtdCampo=document.getElementById('flvQtdPaletes').value.trim();
+  const qtdInformada=parseInt(qtdCampo)||0;
+  const qtdPesada=flvPesos.length;
+  document.getElementById('flvCount').textContent=qtdPesada+' pal.';
+
+  const box=document.getElementById('flvStatusBox');
+  const icon=document.getElementById('flvStatusIcon');
+  const val=document.getElementById('flvStatusVal');
+  const label=document.querySelector('#flvStatusBox .flv-status-label');
+
+  box.classList.remove('ok','warn');
+  if(qtdCampo===''){
+    // Ainda não conferiu — só mostra o total pesado, sem comparar
+    label.textContent='Paletes pesados';
+    val.textContent=qtdPesada;
+    icon.textContent='📦';
+  }else if(qtdPesada===qtdInformada){
+    label.textContent='Confere! Paletes pesados';
+    val.textContent=qtdPesada+' / '+qtdInformada;
+    box.classList.add('ok');icon.textContent='✅';
+  }else{
+    label.textContent='Paletes pesados';
+    val.textContent=qtdPesada+' / '+qtdInformada;
+    box.classList.add('warn');icon.textContent='⚠️';
+  }
+
+  atualizarFlvCalculo();
+}
+
+/* Recalcula peso bruto total, peso retirado e peso líquido final */
+function atualizarFlvCalculo(){
+  const totalBruto=flvPesos.reduce((s,v)=>s+v,0);
+  const pctRaw=document.getElementById('flvPercentual').value.trim().replace(',','.');
+  const pct=parseFloat(pctRaw)||0;
+  const retirado=totalBruto*pct/100;
+  const liquido=totalBruto-retirado;
+
+  document.getElementById('flvCalcBruto').textContent=totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+  document.getElementById('flvCalcPct').textContent=pct.toLocaleString('pt-BR',{minimumFractionDigits:pct%1===0?0:2});
+  document.getElementById('flvCalcRetirado').textContent=retirado.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+  document.getElementById('flvCalcLiquido').textContent=liquido.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+}
+
+/* Abre o resumo de confirmação, validando os dados antes */
+function abrirResumoFlv(){
+  const fornecedor=document.getElementById('flvFornecedor').value.trim();
+  const fruta=document.getElementById('flvFruta').value.trim();
+  const qtdCampo=document.getElementById('flvQtdPaletes').value.trim();
+  const qtdInformada=parseInt(qtdCampo)||0;
+  const pctInputStr=document.getElementById('flvPercentual').value.trim();
+  const pctRaw=pctInputStr.replace(',','.');
+  const pct=parseFloat(pctRaw);
+
+  if(!fornecedor){showToast('❌ Informe o fornecedor');document.getElementById('flvFornecedor').focus();return;}
+  if(!fruta){showToast('❌ Informe a fruta/produto');document.getElementById('flvFruta').focus();return;}
+  if(flvPesos.length===0){showToast('❌ Lance ao menos um peso de palete');document.getElementById('flvPesoInput').focus();return;}
+  if(isNaN(pct)||pctRaw===''){showToast('❌ Informe o percentual de desconto (quebra)');document.getElementById('flvPercentual').focus();return;}
+  if(pct<0||pct>100){showToast('❌ Percentual inválido (0 a 100)');document.getElementById('flvPercentual').focus();return;}
+
+  // Conferência de quantidade é opcional — só avisa se o campo foi preenchido e não bate
+  if(qtdCampo!==''&&flvPesos.length!==qtdInformada){
+    mostrarConfirm('Você pesou '+flvPesos.length+' paletes, mas informou '+qtdInformada+' na conferência. Continuar mesmo assim?','⚠️',()=>{
+      montarResumoFlv(fornecedor,fruta,qtdCampo!==''?qtdInformada:null,pct,pctInputStr);
+    });
+    return;
+  }
+
+  montarResumoFlv(fornecedor,fruta,qtdCampo!==''?qtdInformada:null,pct,pctInputStr);
+}
+
+/* Monta e exibe o card de resumo com os dados finais */
+function montarResumoFlv(fornecedor,fruta,qtdInformada,pct,pctInputStr){
+  const totalBruto=flvPesos.reduce((s,v)=>s+v,0);
+  const retirado=totalBruto*pct/100;
+  const liquido=totalBruto-retirado;
+  const pctTxt=(pctInputStr||String(pct)).replace('.',',');
+
+  flvUltimoResumo={fornecedor,fruta,qtdPaletes:flvPesos.length,pesos:[...flvPesos],pct,pctTxt,totalBruto,retirado,liquido};
+
+  document.getElementById('flvResumoConteudo').innerHTML=`
+    <div class="flv-resumo-row"><span>Fornecedor</span><b>${fornecedor}</b></div>
+    <div class="flv-resumo-row"><span>Fruta / Produto</span><b>${fruta}</b></div>
+    <div class="flv-resumo-row"><span>Paletes pesados</span><b>${flvPesos.length}${qtdInformada!==null?' / '+qtdInformada:''}</b></div>
+    <div class="flv-resumo-row"><span>Peso Bruto Total</span><b>${totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Percentual Retirado</span><b>${pctTxt}%</b></div>
+    <div class="flv-resumo-row"><span>Peso Retirado</span><b style="color:var(--red)">${retirado.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Peso Líquido Final</span><b style="color:var(--amber);font-size:16px;">${liquido.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+  `;
+  document.getElementById('modalFlvResumo').classList.add('open');
+}
+
+/* Confirma e gera a mensagem pronta pro grupo */
+/* Formata peso em kg SEM casas decimais (usado só nas mensagens de WhatsApp) */
+function kgSemDecimal(v){
+  return Math.round(v).toLocaleString('pt-BR');
+}
+
+function confirmarFlv(){
+  if(!flvUltimoResumo)return;
+  bgClose('modalFlvResumo');
+  const r=flvUltimoResumo;
+  const msg=
+`Fornecedor: ${r.fornecedor}
+
+Fruta: ${r.fruta}
+
+Peso recebido: ${kgSemDecimal(r.totalBruto)} kg
+
+Percentual retirado: ${r.pctTxt}%
+
+Peso retirado: ${kgSemDecimal(r.retirado)} kg
+
+Peso lançado no sistema: ${kgSemDecimal(r.liquido)} kg`;
+
+  document.getElementById('flvMsgTxt').value=msg;
+  document.getElementById('modalFlvMsg').classList.add('open');
+  if(navigator.vibrate)navigator.vibrate([80,40,80]);
+  showToast('✅ Recebimento confirmado!');
+
+  // Salva no histórico do aparelho para conferência manual posterior
+  salvarHistoricoFlv(r);
+}
+
+/* Copia a mensagem para a área de transferência */
+async function copiarMsgFlv(){
+  const txt=document.getElementById('flvMsgTxt');
+  try{
+    await navigator.clipboard.writeText(txt.value);
+    showToast('📋 Mensagem copiada!');
+  }catch(e){
+    txt.removeAttribute('readonly');
+    txt.focus();txt.select();
+    try{document.execCommand('copy');showToast('📋 Mensagem copiada!');}
+    catch(e2){showToast('❌ Não foi possível copiar. Selecione o texto manualmente.');}
+    txt.setAttribute('readonly','');
+  }
+}
+
+/* Envia a mensagem pelo WhatsApp */
+function enviarWAFlv(){
+  const msg=document.getElementById('flvMsgTxt').value;
+  const url='https://wa.me/?text='+encodeURIComponent(msg);
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+
+/* Monta o texto da lista detalhada com o peso de cada palete (usado para conferência manual)
+   Obs: usamos "1)" em vez de "1." porque o WhatsApp às vezes interpreta uma sequência de
+   números com pontos como se fosse um número de telefone e "gruda"/sublinha tudo em azul. */
+function gerarListaTextoFlv(r){
+  const linhas=r.pesos.map((v,i)=>`${i+1}) ${kgSemDecimal(v)} kg`).join('\n');
+  return `📦 LISTA DE PESOS — ${r.fornecedor} · ${r.fruta}\n\n${linhas}\n\nTotal de paletes: ${r.pesos.length}\nPeso bruto total: ${kgSemDecimal(r.totalBruto)} kg`;
+}
+
+/* Copia a lista detalhada de pesos */
+async function copiarListaFlv(){
+  if(!flvUltimoResumo)return;
+  const texto=gerarListaTextoFlv(flvUltimoResumo);
+  try{
+    await navigator.clipboard.writeText(texto);
+    showToast('📋 Lista de pesos copiada!');
+  }catch(e){
+    showToast('❌ Não foi possível copiar.');
+  }
+}
+
+/* Envia a lista detalhada de pesos pelo WhatsApp */
+function enviarWAListaFlv(){
+  if(!flvUltimoResumo)return;
+  const texto=gerarListaTextoFlv(flvUltimoResumo);
+  const url='https://wa.me/?text='+encodeURIComponent(texto);
+  window.location.href=url;
+  showToast('💬 Abrindo WhatsApp...');
+}
+
+/* ── HISTÓRICO FLV (fica salvo no aparelho, mesmo fechando o app) ── */
+function carregarHistoricoFlv(){
+  try{
+    const raw=localStorage.getItem('vigil_flv_historico');
+    return raw?JSON.parse(raw):[];
+  }catch(e){return [];}
+}
+function salvarHistoricoFlv(r){
+  try{
+    const hist=carregarHistoricoFlv();
+    hist.unshift({...r,dataHora:new Date().toLocaleString('pt-BR')});
+    // Mantém só os últimos 100 registros pra não crescer sem limite
+    if(hist.length>100)hist.length=100;
+    localStorage.setItem('vigil_flv_historico',JSON.stringify(hist));
+  }catch(e){console.warn('Não foi possível salvar histórico FLV:',e);}
+}
+function abrirHistoricoFlv(){
+  const hist=carregarHistoricoFlv();
+  const cont=document.getElementById('flvHistConteudo');
+  if(hist.length===0){
+    cont.innerHTML=`<div class="peso-empty"><div style="font-size:36px;opacity:.5">📜</div><div style="font-size:13px;margin-top:8px;font-weight:500;">Nenhum recebimento confirmado ainda.</div></div>`;
+  }else{
+    cont.innerHTML='';
+    hist.forEach((r,i)=>{
+      const el=document.createElement('div');
+      el.className='flv-pallet-item';
+      el.style.cursor='pointer';
+      el.onclick=()=>verDetalheHistFlv(i);
+      el.innerHTML=`
+        <div class="flv-pallet-num" style="width:34px;">🥬</div>
+        <div class="flv-pallet-val" style="font-size:14px;">
+          <div style="font-weight:800;">${r.fornecedor} · ${r.fruta}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);font-weight:500;margin-top:2px;">${r.dataHora} · ${r.pesos.length} paletes · ${r.liquido.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg líq.</div>
+        </div>
+        <div style="color:var(--muted);font-size:18px;">›</div>`;
+      cont.appendChild(el);
+    });
+  }
+  document.getElementById('modalFlvHist').classList.add('open');
+}
+let _flvHistDetAtual=null;
+function verDetalheHistFlv(idx){
+  const hist=carregarHistoricoFlv();
+  const r=hist[idx];
+  if(!r)return;
+  _flvHistDetAtual=r;
+  document.getElementById('flvHistDetTitulo').textContent=r.fornecedor+' · '+r.fruta;
+  const linhas=r.pesos.map((v,i)=>`
+    <div class="flv-resumo-row"><span>Palete ${i+1}</span><b>${v.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>`).join('');
+  document.getElementById('flvHistDetConteudo').innerHTML=`
+    <div class="flv-resumo-row"><span>Data / Hora</span><b>${r.dataHora}</b></div>
+    <div class="flv-resumo-row"><span>Paletes</span><b>${r.pesos.length}</b></div>
+    <div class="flv-resumo-row"><span>Peso Bruto Total</span><b>${r.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Percentual Retirado</span><b>${r.pctTxt||r.pct.toLocaleString('pt-BR',{minimumFractionDigits:r.pct%1===0?0:2})}%</b></div>
+    <div class="flv-resumo-row"><span>Peso Retirado</span><b style="color:var(--red)">${r.retirado.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Peso Líquido Final</span><b style="color:var(--amber);">${r.liquido.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div style="margin-top:10px;margin-bottom:4px;font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.5px;">PESO DE CADA PALETE</div>
+    ${linhas}
+  `;
+  document.getElementById('modalFlvHistDet').classList.add('open');
+}
+async function copiarListaHistDet(){
+  if(!_flvHistDetAtual)return;
+  const texto=gerarListaTextoFlv(_flvHistDetAtual);
+  try{
+    await navigator.clipboard.writeText(texto);
+    showToast('📋 Lista de pesos copiada!');
+  }catch(e){
+    showToast('❌ Não foi possível copiar.');
+  }
+}
+
+/* Começa um novo recebimento, limpando tudo */
+function novoRecebimentoFlv(){
+  bgClose('modalFlvMsg');
+  flvUltimoResumo=null;
+  encerrarSessaoAtualFlv();
+  const pendentes=flvSessoes.filter(s=>s.fornecedor.trim()||s.pesos.length>0).length;
+  showToast(pendentes>0?'🔄 Fornecedor concluído! Aba seguinte carregada.':'🔄 Pronto para novo recebimento');
+}
+
+/* ══════════════════════════════════════════
+   CONFERÊNCIA POR PESO — para caixas de papelão com peso padrão.
+   Lista única de paletes: "✓ Palete Cheio" adiciona o padrão com um
+   toque; se vier incompleto, digita a quantidade real de caixas.
+   Soma tudo = Total de Caixas. Total de Caixas × Peso da Caixa =
+   Peso Recebido (bruto). Aplica o percentual de desconto (quebra)
+   igual ao Recebimento FLV e gera a mensagem no mesmo formato padrão.
+   ══════════════════════════════════════════ */
+let cpPaletes=[]; // quantidade de caixas de cada palete lançado (cheio ou incompleto)
+let cpUltimoResumo=null;
+
+function abrirConfPeso(){
+  showScreen('sc-confpeso');
+  renderPaletesCP();
+}
+
+function voltarHomeConfPeso(){
+  const temDados=document.getElementById('cpFornecedor').value.trim()||document.getElementById('cpFruta').value.trim()||document.getElementById('cpPesoPadrao').value.trim()||cpPaletes.length>0;
+  if(temDados){
+    mostrarConfirm('Voltar? Os dados desta conferência serão perdidos.','⚠️',()=>{
+      resetFormCP();showScreen('sc-upload');
+    });return;
+  }
+  showScreen('sc-upload');
+}
+
+function resetFormCP(){
+  cpPaletes=[];
+  ['cpFornecedor','cpFruta','cpPesoPadrao','cpCaixasPorPalete','cpPaleteInput','cpQtdEsperada','cpPercentual'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  renderPaletesCP();
+}
+
+/* Adiciona um palete CHEIO: usa o valor de "Caixas por Palete" direto, sem precisar digitar nada */
+function adicionarPaleteCheioCP(){
+  const caixasPorPalete=parseInt(document.getElementById('cpCaixasPorPalete').value)||0;
+  if(caixasPorPalete<=0){
+    showToast('❌ Informe primeiro quantas caixas tem um palete cheio');
+    document.getElementById('cpCaixasPorPalete').focus();
+    return;
+  }
+  cpPaletes.push(caixasPorPalete);
+  if(navigator.vibrate)navigator.vibrate(30);
+  renderPaletesCP();
+}
+
+/* Adiciona um palete INCOMPLETO: usa a quantidade real digitada */
+function adicionarPaleteIncompletoCP(){
+  const inp=document.getElementById('cpPaleteInput');
+  const valor=parseInt(inp.value);
+  if(!inp.value.trim()||isNaN(valor)||valor<=0){
+    showToast('❌ Informe quantas caixas esse palete tem');
+    inp.focus();
+    return;
+  }
+  cpPaletes.push(valor);
+  inp.value='';
+  inp.focus();
+  if(navigator.vibrate)navigator.vibrate(30);
+  renderPaletesCP();
+}
+
+function removerPaleteCP(idx){
+  cpPaletes.splice(idx,1);
+  renderPaletesCP();
+}
+
+function limparPaletesCP(){
+  if(cpPaletes.length===0)return;
+  mostrarConfirm('Limpar todos os '+cpPaletes.length+' paletes lançados?','🗑️',()=>{
+    cpPaletes=[];renderPaletesCP();showToast('🗑 Lista limpa');
+  });
+}
+
+/* Renderiza a lista única de paletes (mostra "cheio" ou "incompleto" conforme bate com o padrão) */
+function renderPaletesCP(){
+  const lista=document.getElementById('cpListaPaletes');
+  lista.innerHTML='';
+  const caixasPorPalete=parseInt(document.getElementById('cpCaixasPorPalete').value)||0;
+  if(cpPaletes.length===0){
+    lista.innerHTML=`<div class="peso-empty"><div style="font-size:36px;opacity:.5">📦</div><div style="font-size:13px;margin-top:8px;font-weight:500;">Nenhum palete lançado ainda.</div></div>`;
+  }else{
+    cpPaletes.forEach((v,i)=>{
+      const cheio=caixasPorPalete>0&&v===caixasPorPalete;
+      const el=document.createElement('div');
+      el.className='flv-pallet-item';
+      el.innerHTML=`
+        <div class="flv-pallet-num">${i+1}</div>
+        <div class="flv-pallet-val" style="display:flex;align-items:center;gap:8px;">
+          ${v} caixas
+          ${cheio?'':'<span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;padding:2px 6px;">incompleto</span>'}
+        </div>
+        <button class="btn-del-peso" onclick="removerPaleteCP(${i})">✕</button>`;
+      lista.appendChild(el);
+    });
+  }
+  atualizarCalculoCP();
+}
+
+/* Recalcula: total de caixas (soma da lista), peso recebido, peso retirado (%), peso lançado e diferença com a NF */
+function atualizarCalculoCP(){
+  const pesoPadrao=parseFloat((document.getElementById('cpPesoPadrao').value||'').trim().replace(',','.'))||0;
+  const qtdEsperadaStr=document.getElementById('cpQtdEsperada').value.trim();
+  const qtdEsperada=parseInt(qtdEsperadaStr)||0;
+  const pct=parseFloat((document.getElementById('cpPercentual').value||'').trim().replace(',','.'))||0;
+
+  const totalCaixas=cpPaletes.reduce((s,v)=>s+v,0);
+  const pesoRecebido=totalCaixas*pesoPadrao;
+  const pesoRetirado=pesoRecebido*pct/100;
+  const pesoLiquido=pesoRecebido-pesoRetirado;
+
+  document.getElementById('cpCalcConta').textContent=cpPaletes.length;
+  document.getElementById('cpCalcCaixas').textContent=totalCaixas;
+  document.getElementById('cpCalcTotal').textContent=pesoRecebido.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+  document.getElementById('cpCalcPct').textContent=pct.toLocaleString('pt-BR',{minimumFractionDigits:pct%1===0?0:2});
+  document.getElementById('cpCalcRetirado').textContent=pesoRetirado.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+  document.getElementById('cpCalcLiquido').textContent=pesoLiquido.toLocaleString('pt-BR',{minimumFractionDigits:3})+' kg';
+  document.getElementById('cpCount').textContent=totalCaixas+' cx';
+
+  const box=document.getElementById('cpStatusBox');
+  const icon=document.getElementById('cpStatusIcon');
+  const val=document.getElementById('cpStatusVal');
+  const label=document.getElementById('cpStatusLabel');
+  box.classList.remove('ok','warn');
+
+  if(totalCaixas===0){
+    label.textContent='Diferença com a NF';
+    val.textContent='—';
+    icon.textContent='📦';
+  }else if(qtdEsperadaStr===''){
+    label.textContent='Total calculado';
+    val.textContent=totalCaixas+' caixas';
+    icon.textContent='📦';
+  }else{
+    const dif=totalCaixas-qtdEsperada;
+    const bate=dif===0;
+    label.textContent=bate?'✅ Bate com a NF':'⚠️ Não bate com a NF';
+    val.textContent=(dif>0?'+':'')+dif+' caixa'+(Math.abs(dif)===1?'':'s');
+    icon.textContent=bate?'✅':'⚠️';
+    box.classList.add(bate?'ok':'warn');
+  }
+}
+
+/* Abre o resumo de confirmação, validando os dados antes */
+function abrirResumoCP(){
+  const fornecedor=document.getElementById('cpFornecedor').value.trim();
+  const fruta=document.getElementById('cpFruta').value.trim();
+  const pesoPadrao=parseFloat((document.getElementById('cpPesoPadrao').value||'').trim().replace(',','.'));
+  const qtdEsperadaStr=document.getElementById('cpQtdEsperada').value.trim();
+  const qtdEsperada=parseInt(qtdEsperadaStr)||0;
+  const pctInputStr=document.getElementById('cpPercentual').value.trim();
+  const pct=parseFloat(pctInputStr.replace(',','.'));
+
+  if(!fornecedor){showToast('❌ Informe o fornecedor');document.getElementById('cpFornecedor').focus();return;}
+  if(!fruta){showToast('❌ Informe a fruta/produto');document.getElementById('cpFruta').focus();return;}
+  if(isNaN(pesoPadrao)||pesoPadrao<=0){showToast('❌ Informe o peso padrão da caixa');document.getElementById('cpPesoPadrao').focus();return;}
+  if(cpPaletes.length===0){showToast('❌ Lance ao menos um palete');return;}
+  if(isNaN(pct)||pctInputStr===''){showToast('❌ Informe o percentual retirado (qualidade)');document.getElementById('cpPercentual').focus();return;}
+  if(pct<0||pct>100){showToast('❌ Percentual inválido (0 a 100)');document.getElementById('cpPercentual').focus();return;}
+
+  const totalCaixas=cpPaletes.reduce((s,v)=>s+v,0);
+  const pesoRecebido=totalCaixas*pesoPadrao;
+  const pesoRetirado=pesoRecebido*pct/100;
+  const pesoLiquido=pesoRecebido-pesoRetirado;
+  const pctTxt=pctInputStr.replace('.',',');
+  const temNF=qtdEsperadaStr!=='';
+  const dif=temNF?totalCaixas-qtdEsperada:null;
+  const bate=temNF?dif===0:null;
+  const corStatus=temNF?(bate?'var(--green)':'var(--red)'):'var(--text)';
+
+  cpUltimoResumo={fornecedor,fruta,pesoPadrao,paletes:[...cpPaletes],qtdEsperada:temNF?qtdEsperada:null,pct,pctTxt,totalCaixas,pesoRecebido,pesoRetirado,pesoLiquido,dif,bate};
+
+  document.getElementById('cpResumoConteudo').innerHTML=`
+    <div class="flv-resumo-row"><span>Fornecedor</span><b>${fornecedor}</b></div>
+    <div class="flv-resumo-row"><span>Fruta / Produto</span><b>${fruta}</b></div>
+    <div class="flv-resumo-row"><span>Peso Padrão da Caixa</span><b>${pesoPadrao.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Paletes Lançados</span><b>${cpPaletes.length}</b></div>
+    <div class="flv-resumo-row"><span>Total de Caixas</span><b>${totalCaixas}</b></div>
+    <div class="flv-resumo-row"><span>Peso Recebido</span><b>${pesoRecebido.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Percentual Retirado</span><b>${pctTxt}%</b></div>
+    <div class="flv-resumo-row"><span>Peso Retirado</span><b style="color:var(--red)">${pesoRetirado.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    <div class="flv-resumo-row"><span>Peso Lançado no Sistema</span><b style="color:var(--amber);font-size:16px;">${pesoLiquido.toLocaleString('pt-BR',{minimumFractionDigits:3})} kg</b></div>
+    ${temNF?`
+    <div class="flv-resumo-row"><span>Caixas Esperadas (NF)</span><b>${qtdEsperada}</b></div>
+    <div class="flv-resumo-row"><span>Diferença</span><b style="color:${corStatus}">${(dif>0?'+':'')+dif}</b></div>
+    <div class="flv-resumo-row"><span>Status</span><b style="color:${corStatus}">${bate?'✅ Bate com a NF':'⚠️ Não bate com a NF'}</b></div>`:''}
+  `;
+  document.getElementById('modalCpResumo').classList.add('open');
+}
+
+/* Confirma e gera a mensagem — mesmo formato padrão do Recebimento FLV */
+function confirmarCP(){
+  if(!cpUltimoResumo)return;
+  bgClose('modalCpResumo');
+  const r=cpUltimoResumo;
+  const msg=
+`Fornecedor: ${r.fornecedor}
+
+Fruta: ${r.fruta}
+
+Peso recebido: ${kgSemDecimal(r.pesoRecebido)} kg
+
+Percentual retirado: ${r.pctTxt}%
+
+Peso retirado: ${kgSemDecimal(r.pesoRetirado)} kg
+
+Peso lançado no sistema: ${kgSemDecimal(r.pesoLiquido)} kg`;
+
+  document.getElementById('cpMsgTxt').value=msg;
+  document.getElementById('modalCpMsg').classList.add('open');
+  const temNF=r.qtdEsperada!==null;
+  if(navigator.vibrate)navigator.vibrate(temNF&&!r.bate?[120,60,120,60,120]:[80,40,80]);
+  showToast(temNF?(r.bate?'✅ Conferência OK!':'⚠️ Divergência encontrada!'):'✅ Recebimento confirmado!');
+}
+
+/* Copia a mensagem para a área de transferência */
+async function copiarMsgCP(){
+  const txt=document.getElementById('cpMsgTxt');
+  try{
+    await navigator.clipboard.writeText(txt.value);
+    showToast('📋 Mensagem copiada!');
+  }catch(e){
+    txt.removeAttribute('readonly');
+    txt.focus();txt.select();
+    try{document.execCommand('copy');showToast('📋 Mensagem copiada!');}
+    catch(e2){showToast('❌ Não foi possível copiar. Selecione o texto manualmente.');}
+    txt.setAttribute('readonly','');
+  }
+}
+
+/* Envia a mensagem pelo WhatsApp */
+function enviarWACP(){
+  const msg=document.getElementById('cpMsgTxt').value;
+  window.location.href='https://wa.me/?text='+encodeURIComponent(msg);
+  showToast('💬 Abrindo WhatsApp...');
+}
+
+/* Começa uma nova conferência, limpando tudo */
+function novaConferenciaCP(){
+  bgClose('modalCpMsg');
+  cpUltimoResumo=null;
+  resetFormCP();
+  showToast('🔄 Pronto para nova conferência');
+}
+/* ── SERVICE WORKER ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));
+  });
+}
+
+renderTriagem();
+
+/* ── EXPORTA FUNÇÕES PARA WINDOW (garante acesso via onclick no HTML) ── */
+window.showScreen=showScreen;
+window.voltarHome=voltarHome;
+window.voltarLista=voltarLista;
+window.logout=logout;
+window.resetApp=resetApp;
+window.handleFile=handleFile;
+window.filtrar=filtrar;
+window.abrirDetalhe=abrirDetalhe;
+window.navegar=navegar;
+window.abrirEditar=abrirEditar;
+window.pedirConf=pedirConf;
+window.confirmarAlteracao=confirmarAlteracao;
+window.bgClose=bgClose;
+window.gerarPDF=gerarPDF;
+window.abrirWA=abrirWA;
+window.enviarWA=enviarWA;
+window.setQtyMode=setQtyMode;
+window.setUnit=setUnit;
+window.setAvaUnit=setAvaUnit;
+window.setEstoque=setEstoque;
+window.setEstoqueUnit=setEstoqueUnit;
+window.setArmazenagem=setArmazenagem;
+window.toggleAvariado=toggleAvariado;
+window.adicionarItemTriagem=adicionarItemTriagem;
+window.removerItemTriagem=removerItemTriagem;
+window.limparTriagem=limparTriagem;
+window.gerarPDFTriagem=gerarPDFTriagem;
+window.abrirWATriagem=abrirWATriagem;
+window.enviarWATriagem=enviarWATriagem;
+window.abrirScanner=abrirScanner;
+window.fecharScanner=fecharScanner;
+window.trocarCamera=trocarCamera;
+window.usarFallbackCamera=usarFallbackCamera;
+window.mostrarConfirm=mostrarConfirm;
+window.apkConfSim=apkConfSim;
+window.apkConfNao=apkConfNao;
+window.atualizarPreview=atualizarPreview;
+window.triEanInput=triEanInput;
+window.abrirFlv=abrirFlv;
+window.novaSessaoFlv=novaSessaoFlv;
+window.carregarSessaoFlv=carregarSessaoFlv;
+window.salvarCampoSessaoFlv=salvarCampoSessaoFlv;
+window.fecharSessaoFlv=fecharSessaoFlv;
+window.encerrarSessaoAtualFlv=encerrarSessaoAtualFlv;
+window.renderAbasFlv=renderAbasFlv;
+window.voltarHomeFlv=voltarHomeFlv;
+window.adicionarPesoPalete=adicionarPesoPalete;
+window.removerPesoFlv=removerPesoFlv;
+window.limparPesosFlv=limparPesosFlv;
+window.renderFlvPesos=renderFlvPesos;
+window.atualizarFlvCalculo=atualizarFlvCalculo;
+window.abrirResumoFlv=abrirResumoFlv;
+window.montarResumoFlv=montarResumoFlv;
+window.confirmarFlv=confirmarFlv;
+window.copiarMsgFlv=copiarMsgFlv;
+window.enviarWAFlv=enviarWAFlv;
+window.novoRecebimentoFlv=novoRecebimentoFlv;
+window.abrirConfPeso=abrirConfPeso;
+window.voltarHomeConfPeso=voltarHomeConfPeso;
+window.adicionarPaleteCheioCP=adicionarPaleteCheioCP;
+window.adicionarPaleteIncompletoCP=adicionarPaleteIncompletoCP;
+window.removerPaleteCP=removerPaleteCP;
+window.limparPaletesCP=limparPaletesCP;
+window.renderPaletesCP=renderPaletesCP;
+window.atualizarCalculoCP=atualizarCalculoCP;
+window.abrirResumoCP=abrirResumoCP;
+window.confirmarCP=confirmarCP;
+window.copiarMsgCP=copiarMsgCP;
+window.enviarWACP=enviarWACP;
+window.novaConferenciaCP=novaConferenciaCP;
+window.copiarListaFlv=copiarListaFlv;
+window.enviarWAListaFlv=enviarWAListaFlv;
+window.abrirHistoricoFlv=abrirHistoricoFlv;
+window.verDetalheHistFlv=verDetalheHistFlv;
+window.copiarListaHistDet=copiarListaHistDet;
+
+}catch(e){
+  console.error('Erro no script principal:',e);
+  // Mesmo com erro, garante navegação básica
+  window.showScreen=window.showScreen||function(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    var el=document.getElementById(id);if(el)el.classList.add('active');
+  };
+}
+</script>
+</body>
+</html>
